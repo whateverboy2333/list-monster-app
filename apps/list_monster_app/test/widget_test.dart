@@ -11,7 +11,7 @@ void main() {
 
     expect(find.text('清单怪兽'), findsOneWidget);
     expect(find.text('今日'), findsWidgets);
-    expect(find.text('清单'), findsOneWidget);
+    expect(find.text('长期'), findsOneWidget);
     expect(find.text('怪兽'), findsOneWidget);
     expect(find.text('我的'), findsOneWidget);
     expect(find.text('小单正在等第一个任务'), findsOneWidget);
@@ -210,7 +210,7 @@ void main() {
     await tester.ensureVisible(repeatButton);
     await tester.tap(repeatButton);
     await tester.pump();
-    expect(find.textContaining('active · inbox · 重复占位'), findsOneWidget);
+    expect(find.textContaining('进行中 · 重复占位'), findsOneWidget);
 
     final reminderButton = find.byTooltip('设置提醒时间');
     await tester.ensureVisible(reminderButton);
@@ -221,11 +221,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('提醒 22:15'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(SwitchListTile, '新任务重复占位'));
+    final newTaskRepeatSwitch = find.widgetWithText(SwitchListTile, '新任务重复占位');
+    await tester.ensureVisible(newTaskRepeatSwitch);
+    await tester.tap(newTaskRepeatSwitch);
     await tester.pump();
-    await tester.tap(find.widgetWithText(SwitchListTile, '新任务提醒意图'));
+    final newTaskReminderSwitch = find.widgetWithText(
+      SwitchListTile,
+      '新任务提醒意图',
+    );
+    await tester.ensureVisible(newTaskReminderSwitch);
+    await tester.tap(newTaskReminderSwitch);
     await tester.pump();
-    await tester.enterText(find.widgetWithText(TextField, '提醒时间'), '21:30');
+    final reminderTimeInput = find.widgetWithText(TextField, '提醒时间');
+    await tester.ensureVisible(reminderTimeInput);
+    await tester.enterText(reminderTimeInput, '21:30');
+    await tester.ensureVisible(titleInput());
     await tester.enterText(titleInput(), '明天买牛奶');
     await tester.ensureVisible(addButton);
     await tester.tap(addButton);
@@ -234,7 +244,7 @@ void main() {
     expect(find.textContaining('提醒 21:30 · 重复占位'), findsOneWidget);
   });
 
-  testWidgets('shows node 4 list grouping and restore entry points', (
+  testWidgets('shows node 4 today cleanup and restore entry points', (
     tester,
   ) async {
     await tester.pumpWidget(const ListMonsterApp());
@@ -251,11 +261,31 @@ void main() {
     await tester.tap(letGoButton);
     await tester.pump();
 
-    await tester.tap(find.text('清单'));
+    final letGoSection = find.widgetWithText(ExpansionTile, '已放下');
+    await tester.ensureVisible(letGoSection);
+    await tester.tap(letGoSection);
     await tester.pumpAndSettle();
 
-    expect(find.text('清单分组'), findsOneWidget);
-    expect(find.text('已放下'), findsOneWidget);
     expect(find.text('恢复'), findsOneWidget);
+  });
+
+  testWidgets('shows long-term tasks without list grouping folders', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ListMonsterApp());
+
+    await tester.tap(find.text('长期'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('长期任务'), findsOneWidget);
+    expect(find.text('清单分组'), findsNothing);
+    expect(find.text('收集箱'), findsNothing);
+    expect(find.text('生活'), findsNothing);
+
+    await tester.tap(find.text('创建 3 天长期任务'));
+    await tester.pump();
+
+    expect(find.text('读一本书'), findsOneWidget);
+    expect(find.textContaining('0/3 · 进行中'), findsOneWidget);
   });
 }

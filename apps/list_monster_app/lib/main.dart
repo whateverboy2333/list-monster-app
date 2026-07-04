@@ -51,7 +51,7 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
   Widget build(BuildContext context) {
     final tabs = [
       TodayTab(controller: _taskSystem),
-      TaskListsTab(controller: _taskSystem),
+      LongTermTab(controller: _taskSystem),
       MonsterTab(controller: _taskSystem),
       const PlaceholderTab(title: '我的', message: '游客、通知、勿扰和桌宠开关会在后续节点接入。'),
     ];
@@ -65,8 +65,8 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.today_outlined), label: '今日'),
           NavigationDestination(
-            icon: Icon(Icons.list_alt_outlined),
-            label: '清单',
+            icon: Icon(Icons.calendar_month_outlined),
+            label: '长期',
           ),
           NavigationDestination(
             icon: Icon(Icons.egg_alt_outlined),
@@ -170,7 +170,7 @@ class _TodayTabState extends State<TodayTab> {
               Text('今日任务', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               if (todayTasks.isEmpty && controller.hasTasks)
-                const Text('今日没有待处理任务。已放下或删除的任务可在清单页恢复。'),
+                const Text('今日没有待处理任务。已放下或删除的任务可在下方恢复。'),
               if (todayTasks.isNotEmpty)
                 ...todayTasks.map(
                   (task) => _TaskTile(
@@ -191,6 +191,19 @@ class _TodayTabState extends State<TodayTab> {
                 const SizedBox(height: 20),
                 _MilestoneCard(milestone: milestone),
               ],
+              const SizedBox(height: 24),
+              _TodayCleanupActions(controller: controller),
+              const SizedBox(height: 16),
+              _RecoverableSection(
+                title: '已放下',
+                tasks: controller.cancelledTasks,
+                onRestore: controller.restoreTask,
+              ),
+              _RecoverableSection(
+                title: '已删除',
+                tasks: controller.deletedTasks,
+                onRestore: controller.restoreTask,
+              ),
             ],
           ),
         );
@@ -293,8 +306,8 @@ class _NewTaskOptions extends StatelessWidget {
   }
 }
 
-class TaskListsTab extends StatelessWidget {
-  const TaskListsTab({super.key, required this.controller});
+class LongTermTab extends StatelessWidget {
+  const LongTermTab({super.key, required this.controller});
 
   final TaskSystemController controller;
 
@@ -307,46 +320,16 @@ class TaskListsTab extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           children: [
             const ListMonsterSectionHeader(
-              title: '清单分组',
-              subtitle: '管理收集箱、长期任务和可恢复任务。',
+              title: '长期任务',
+              subtitle: '超过一天的目标，会自动拆成每日任务。',
             ),
             const SizedBox(height: 16),
-            ...controller.taskLists.map(
-              (list) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.folder_outlined),
-                title: Text(list.name),
-                subtitle: Text(list.listType.contractName),
-                trailing: Text('${controller.countTasksInList(list.listId)}'),
-              ),
+            FilledButton.icon(
+              onPressed: () => controller.createLongTermTask('读一本书'),
+              icon: const Icon(Icons.add_task_outlined),
+              label: const Text('创建 3 天长期任务'),
             ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.icon(
-                  onPressed: controller.activeTasks.isEmpty
-                      ? null
-                      : controller.applyNoPressureCleanup,
-                  icon: const Icon(Icons.self_improvement_outlined),
-                  label: const Text('无压清理：放下未完成'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: controller.undoLastBatchCleanup,
-                  icon: const Icon(Icons.undo_outlined),
-                  label: const Text('撤销最近清理'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => controller.createLongTermTask('读一本书'),
-                  icon: const Icon(Icons.calendar_month_outlined),
-                  label: const Text('创建 3 天长期任务'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text('长期任务', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
             if (controller.longTermTasks.isEmpty)
               const Text('还没有长期任务。长期任务会自动生成每日拆解项。'),
             ...controller.longTermTasks.map(
@@ -355,25 +338,50 @@ class TaskListsTab extends StatelessWidget {
                 leading: const Icon(Icons.flag_outlined),
                 title: Text(task.title),
                 subtitle: Text(
-                  '${task.completedTaskCount}/${task.totalTaskCount} · ${task.status.contractName}',
+                  '${task.completedTaskCount}/${task.totalTaskCount} · ${task.status.label}',
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            _RecoverableSection(
-              title: '已放下',
-              tasks: controller.cancelledTasks,
-              onRestore: controller.restoreTask,
-            ),
-            const SizedBox(height: 16),
-            _RecoverableSection(
-              title: '已删除',
-              tasks: controller.deletedTasks,
-              onRestore: controller.restoreTask,
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _TodayCleanupActions extends StatelessWidget {
+  const _TodayCleanupActions({required this.controller});
+
+  final TaskSystemController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('无压清理', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        const Text('今天暂时做不完的任务，可以先放下，不产生 XP 惩罚。'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            FilledButton.icon(
+              onPressed: controller.activeTasks.isEmpty
+                  ? null
+                  : controller.applyNoPressureCleanup,
+              icon: const Icon(Icons.self_improvement_outlined),
+              label: const Text('放下未完成'),
+            ),
+            OutlinedButton.icon(
+              onPressed: controller.undoLastBatchCleanup,
+              icon: const Icon(Icons.undo_outlined),
+              label: const Text('撤销最近清理'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -391,16 +399,18 @@ class _RecoverableSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      title: Text(title),
+      subtitle: Text('${tasks.length} 个任务'),
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        if (tasks.isEmpty) const Text('暂无'),
+        if (tasks.isEmpty)
+          const Align(alignment: Alignment.centerLeft, child: Text('暂无')),
         ...tasks.map(
           (task) => ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(task.title),
-            subtitle: Text(task.status.contractName),
+            subtitle: Text(task.status.label),
             trailing: TextButton(
               onPressed: () => onRestore(task.id),
               child: const Text('恢复'),
@@ -437,6 +447,28 @@ class _MonsterStatusStrip extends StatelessWidget {
         Text('+${controller.todayXp} XP', style: textTheme.titleMedium),
       ],
     );
+  }
+}
+
+extension on TaskStatus {
+  String get label {
+    return switch (this) {
+      TaskStatus.active => '进行中',
+      TaskStatus.completed => '已完成',
+      TaskStatus.cancelled => '已放下',
+      TaskStatus.deleted => '已删除',
+    };
+  }
+}
+
+extension on LongTermTaskStatus {
+  String get label {
+    return switch (this) {
+      LongTermTaskStatus.active => '进行中',
+      LongTermTaskStatus.achieved => '已完成',
+      LongTermTaskStatus.cancelled => '已取消',
+      LongTermTaskStatus.deleted => '已删除',
+    };
   }
 }
 
@@ -526,7 +558,7 @@ class _TaskTile extends StatelessWidget {
   }
 
   String get _subtitle {
-    final parts = <String>[task.status.contractName, task.listId];
+    final parts = <String>[task.status.label];
     if (task.reminderId != null) {
       parts.add('提醒 ${task.dueTime ?? '已设置'}');
     }
