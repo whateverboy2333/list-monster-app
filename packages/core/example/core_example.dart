@@ -6,8 +6,9 @@ void main() {
     eventName: 'task_created',
     userId: 'user_1',
     occurredAt: DateTime.now(),
+    source: DomainEventSource.androidApp,
+    payload: const {'taskId': 'task_1'},
   );
 
   print(event.eventName);
 }
-
