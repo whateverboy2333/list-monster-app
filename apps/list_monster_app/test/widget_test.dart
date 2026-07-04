@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:list_monster_app/main.dart';
 import 'package:list_monster_app/node3_core_loop.dart';
 import 'package:monster_domain/monster_domain.dart';
+import 'package:task_domain/task_domain.dart';
 
 void main() {
   testWidgets('shows the node 2 app shell', (tester) async {
@@ -61,5 +62,124 @@ void main() {
     );
     expect(controller.xpLedger.single.dailyTotalAfterGrant, 10);
     expect(controller.todayXp, 10);
+  });
+
+  test('node 4 controller restores tasks without granting XP', () {
+    final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+    controller.createTask('整理收集箱');
+    final taskId = controller.tasks.single.id;
+    expect(controller.events.whereType<TaskCreatedEvent>(), hasLength(1));
+
+    controller.completeTask(taskId);
+    expect(controller.todayXp, 10);
+
+    controller.undoCompletion(taskId);
+    expect(controller.todayXp, 0);
+    expect(controller.tasks.single.status, TaskStatus.active);
+    expect(controller.xpLedger.last.eventName, 'xp_reverted');
+
+    controller.cancelTask(taskId);
+    expect(controller.tasks.single.status, TaskStatus.cancelled);
+    expect(controller.todayXp, 0);
+
+    controller.restoreTask(taskId);
+    expect(controller.tasks.single.status, TaskStatus.active);
+    expect(controller.todayXp, 0);
+    expect(controller.events.whereType<TaskRestoredEvent>(), isNotEmpty);
+  });
+
+  test(
+    'node 4 controller creates long-term child tasks and achieves from them',
+    () {
+      final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+      controller.createLongTermTask('读一本书');
+
+      expect(controller.longTermTasks, hasLength(1));
+      expect(controller.longTermTasks.single.canCompleteDirectly, isFalse);
+      expect(
+        controller.tasks.where((task) => task.type == TaskType.longTermChild),
+        hasLength(3),
+      );
+
+      for (final task in controller.tasks.toList()) {
+        controller.completeTask(task.id);
+      }
+
+      expect(
+        controller.longTermTasks.single.status,
+        LongTermTaskStatus.achieved,
+      );
+      expect(controller.events.whereType<LongTermAchievedEvent>(), isNotEmpty);
+    },
+  );
+
+  test('node 4 controller cancels unfinished long-term child tasks only', () {
+    final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+    controller.createLongTermTask('读一本书');
+    final completedChild = controller.tasks.first;
+    controller.completeTask(completedChild.id);
+
+    controller.cancelLongTermTask(
+      controller.longTermTasks.single.longTermTaskId,
+    );
+
+    expect(
+      controller.longTermTasks.single.status,
+      LongTermTaskStatus.cancelled,
+    );
+    expect(controller.tasks.first.status, TaskStatus.completed);
+    expect(
+      controller.tasks
+          .skip(1)
+          .every((task) => task.status == TaskStatus.cancelled),
+      isTrue,
+    );
+    expect(controller.events.whereType<LongTermCancelledEvent>(), isNotEmpty);
+  });
+
+  test('node 4 controller records reminder intent and repeat placeholder', () {
+    final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+    controller.createTask(
+      '缴水电费',
+      withTonightReminder: true,
+      repeatRuleId: 'monthly_placeholder',
+    );
+
+    expect(controller.reminderIntents, hasLength(1));
+    expect(controller.tasks.single.reminderId, 'rem_1');
+    expect(controller.tasks.single.repeatRuleId, 'monthly_placeholder');
+    expect(
+      controller.reminderIntents.single.eventName,
+      'notification_scheduled',
+    );
+  });
+
+  testWidgets('shows node 4 list grouping and restore entry points', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ListMonsterApp());
+
+    final input = find.byType(EditableText);
+    final addButton = find.text('加入今日');
+    await tester.enterText(input, '整理收集箱');
+    await tester.ensureVisible(addButton);
+    await tester.tap(addButton);
+    await tester.pump();
+
+    final letGoButton = find.byTooltip('放下任务');
+    await tester.ensureVisible(letGoButton);
+    await tester.tap(letGoButton);
+    await tester.pump();
+
+    await tester.tap(find.text('清单'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('清单分组'), findsOneWidget);
+    expect(find.text('已放下'), findsOneWidget);
+    expect(find.text('恢复'), findsOneWidget);
   });
 }
