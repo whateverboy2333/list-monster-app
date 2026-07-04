@@ -208,6 +208,43 @@ void main() {
     expect(reminder.payload['respectDnd'], isTrue);
   });
 
+  test('creates custom local reminder times', () {
+    final reminder = ReminderIntent.localTime(
+      reminderId: 'rem_custom',
+      taskId: 'task_1',
+      localDate: DateTime(2026, 7, 4),
+      timeOfDay: '21:30',
+    );
+
+    expect(reminder.plannedAt, DateTime(2026, 7, 4, 21, 30));
+    expect(reminder.deliverAt, reminder.plannedAt);
+    expect(reminder.payload['plannedAt'], '2026-07-04T21:30:00.000');
+  });
+
+  test('clears task optional scheduling fields through copyWith flags', () {
+    final task = TaskItem.create(
+      id: 'task_1',
+      userId: 'local_guest',
+      draft: const TaskDraft(
+        title: 'Clear options',
+        dueTime: '20:00',
+        reminderId: 'rem_1',
+        repeatRuleId: 'repeat_placeholder',
+      ),
+      today: DateTime(2026, 7, 4),
+    );
+
+    final cleared = task.copyWith(
+      clearDueTime: true,
+      clearReminderId: true,
+      clearRepeatRuleId: true,
+    );
+
+    expect(cleared.dueTime, isNull);
+    expect(cleared.reminderId, isNull);
+    expect(cleared.repeatRuleId, isNull);
+  });
+
   test(
     'creates long-term child tasks and achieves only from child progress',
     () {

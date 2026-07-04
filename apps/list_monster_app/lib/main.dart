@@ -90,12 +90,17 @@ class TodayTab extends StatefulWidget {
 
 class _TodayTabState extends State<TodayTab> {
   final TextEditingController _titleController = TextEditingController();
-  bool _withTonightReminder = false;
+  final TextEditingController _reminderTimeController = TextEditingController(
+    text: '20:00',
+  );
+  bool _withTaskReminder = false;
   bool _withRepeatPlaceholder = false;
+  String? _reminderTimeError;
 
   @override
   void dispose() {
     _titleController.dispose();
+    _reminderTimeController.dispose();
     super.dispose();
   }
 
@@ -137,22 +142,23 @@ class _TodayTabState extends State<TodayTab> {
                 onSubmitted: (_) => _createTask(),
               ),
               const SizedBox(height: 12),
-              SwitchListTile(
-                value: _withTonightReminder,
-                onChanged: (value) =>
-                    setState(() => _withTonightReminder = value),
-                title: const Text('今晚提醒意图'),
-                subtitle: const Text('只记录提醒计划，不调度系统通知'),
-                contentPadding: EdgeInsets.zero,
-              ),
-              CheckboxListTile(
-                value: _withRepeatPlaceholder,
-                onChanged: (value) =>
-                    setState(() => _withRepeatPlaceholder = value ?? false),
-                title: const Text('保留重复规则占位'),
-                subtitle: const Text('P0 只保存 repeatRuleId，不生成重复实例'),
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
+              _NewTaskOptions(
+                reminderEnabled: _withTaskReminder,
+                repeatEnabled: _withRepeatPlaceholder,
+                reminderTimeController: _reminderTimeController,
+                reminderTimeError: _reminderTimeError,
+                onReminderEnabledChanged: (value) {
+                  setState(() {
+                    _withTaskReminder = value;
+                    if (!value) {
+                      _reminderTimeError = null;
+                    }
+                  });
+                },
+                onRepeatChanged: (value) =>
+                    setState(() => _withRepeatPlaceholder = value),
+                onReminderTimeChanged: (_) =>
+                    setState(() => _reminderTimeError = null),
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
@@ -173,6 +179,12 @@ class _TodayTabState extends State<TodayTab> {
                     onUndo: () => controller.undoCompletion(task.id),
                     onCancel: () => controller.cancelTask(task.id),
                     onDelete: () => controller.deleteTask(task.id),
+                    onToggleRepeat: () => controller.setTaskRepeatPlaceholder(
+                      task.id,
+                      task.repeatRuleId == null,
+                    ),
+                    onReminderChanged: (reminderTime) =>
+                        controller.setTaskReminderIntent(task.id, reminderTime),
                   ),
                 ),
               if (milestone != null) ...[
@@ -187,12 +199,97 @@ class _TodayTabState extends State<TodayTab> {
   }
 
   void _createTask() {
+    final reminderTime = _withTaskReminder
+        ? _normalizeReminderTimeInput(_reminderTimeController.text)
+        : null;
+    if (_withTaskReminder && reminderTime == null) {
+      setState(() => _reminderTimeError = '请输入 00:00-23:59');
+      return;
+    }
+
     widget.controller.createTask(
       _titleController.text,
-      withTonightReminder: _withTonightReminder,
-      repeatRuleId: _withRepeatPlaceholder ? 'repeat_placeholder' : null,
+      reminderTime: reminderTime,
+      repeatRuleId: _withRepeatPlaceholder
+          ? TaskSystemController.repeatPlaceholderRuleId
+          : null,
     );
     _titleController.clear();
+  }
+}
+
+class _NewTaskOptions extends StatelessWidget {
+  const _NewTaskOptions({
+    required this.reminderEnabled,
+    required this.repeatEnabled,
+    required this.reminderTimeController,
+    required this.reminderTimeError,
+    required this.onReminderEnabledChanged,
+    required this.onRepeatChanged,
+    required this.onReminderTimeChanged,
+  });
+
+  final bool reminderEnabled;
+  final bool repeatEnabled;
+  final TextEditingController reminderTimeController;
+  final String? reminderTimeError;
+  final ValueChanged<bool> onReminderEnabledChanged;
+  final ValueChanged<bool> onRepeatChanged;
+  final ValueChanged<String> onReminderTimeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('新任务选项', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 4),
+            const Text('只应用到下一次新增的任务；已有任务可在任务行修改。'),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              value: repeatEnabled,
+              onChanged: onRepeatChanged,
+              title: const Text('新任务重复占位'),
+              subtitle: const Text('保存 repeatRuleId，不生成重复实例'),
+              secondary: const Icon(Icons.repeat_outlined),
+              contentPadding: EdgeInsets.zero,
+            ),
+            SwitchListTile(
+              value: reminderEnabled,
+              onChanged: onReminderEnabledChanged,
+              title: const Text('新任务提醒意图'),
+              subtitle: const Text('只记录提醒计划，不调度系统通知'),
+              secondary: const Icon(Icons.notifications_outlined),
+              contentPadding: EdgeInsets.zero,
+            ),
+            if (reminderEnabled)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TextField(
+                  controller: reminderTimeController,
+                  decoration: InputDecoration(
+                    labelText: '提醒时间',
+                    hintText: '20:30',
+                    errorText: reminderTimeError,
+                    border: const OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.datetime,
+                  onChanged: onReminderTimeChanged,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -350,6 +447,8 @@ class _TaskTile extends StatelessWidget {
     required this.onUndo,
     required this.onCancel,
     required this.onDelete,
+    required this.onToggleRepeat,
+    required this.onReminderChanged,
   });
 
   final TaskItem task;
@@ -357,6 +456,8 @@ class _TaskTile extends StatelessWidget {
   final VoidCallback onUndo;
   final VoidCallback onCancel;
   final VoidCallback onDelete;
+  final VoidCallback onToggleRepeat;
+  final ValueChanged<String?> onReminderChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -376,6 +477,16 @@ class _TaskTile extends StatelessWidget {
           child: Wrap(
             spacing: 4,
             children: [
+              IconButton(
+                tooltip: task.repeatRuleId == null ? '设为重复占位' : '取消重复占位',
+                onPressed: onToggleRepeat,
+                icon: const Icon(Icons.repeat_outlined),
+              ),
+              IconButton(
+                tooltip: '设置提醒时间',
+                onPressed: () => _showReminderDialog(context),
+                icon: const Icon(Icons.notifications_outlined),
+              ),
               if (task.isCompleted)
                 IconButton(
                   tooltip: '撤销完成',
@@ -401,10 +512,23 @@ class _TaskTile extends StatelessWidget {
     );
   }
 
+  Future<void> _showReminderDialog(BuildContext context) async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) =>
+          _ReminderTimeDialog(initialTime: task.dueTime ?? '20:00'),
+    );
+
+    if (result == null) {
+      return;
+    }
+    onReminderChanged(_normalizeReminderTimeInput(result));
+  }
+
   String get _subtitle {
     final parts = <String>[task.status.contractName, task.listId];
     if (task.reminderId != null) {
-      parts.add('今晚提醒意图');
+      parts.add('提醒 ${task.dueTime ?? '已设置'}');
     }
     if (task.repeatRuleId != null) {
       parts.add('重复占位');
@@ -414,6 +538,85 @@ class _TaskTile extends StatelessWidget {
     }
     return parts.join(' · ');
   }
+}
+
+class _ReminderTimeDialog extends StatefulWidget {
+  const _ReminderTimeDialog({required this.initialTime});
+
+  final String initialTime;
+
+  @override
+  State<_ReminderTimeDialog> createState() => _ReminderTimeDialogState();
+}
+
+class _ReminderTimeDialogState extends State<_ReminderTimeDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final TextEditingController _reminderTimeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _reminderTimeController = TextEditingController(text: widget.initialTime);
+  }
+
+  @override
+  void dispose() {
+    _reminderTimeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('设置提醒时间'),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _reminderTimeController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: '提醒时间',
+            hintText: '20:30',
+            border: OutlineInputBorder(),
+          ),
+          keyboardType: TextInputType.datetime,
+          validator: (value) {
+            if (_normalizeReminderTimeInput(value ?? '') == null) {
+              return '请输入 00:00-23:59';
+            }
+            return null;
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(''),
+          child: const Text('清除'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (_formKey.currentState?.validate() ?? false) {
+              Navigator.of(context).pop(_reminderTimeController.text);
+            }
+          },
+          child: const Text('保存'),
+        ),
+      ],
+    );
+  }
+}
+
+String? _normalizeReminderTimeInput(String value) {
+  final match = RegExp(
+    r'^([01]?\d|2[0-3]):([0-5]\d)$',
+  ).firstMatch(value.trim());
+  if (match == null) {
+    return null;
+  }
+
+  final hour = int.parse(match.group(1)!);
+  final minute = match.group(2)!;
+  return '${hour.toString().padLeft(2, '0')}:$minute';
 }
 
 class _MilestoneCard extends StatelessWidget {

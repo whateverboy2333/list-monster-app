@@ -444,6 +444,7 @@ class TaskItem {
       scheduledDate: _dateOnly(toScheduledDate),
       dateSource: TaskDateSource.userSelected,
       dueTime: toDueTime,
+      clearDueTime: toDueTime == null,
     );
 
     return TaskRescheduledResult(
@@ -475,6 +476,9 @@ class TaskItem {
     DateTime? cancelledAt,
     DateTime? deletedAt,
     DateTime? restoredAt,
+    bool clearDueTime = false,
+    bool clearReminderId = false,
+    bool clearRepeatRuleId = false,
     bool clearCompletedAt = false,
     bool clearCompletionSource = false,
     bool clearCompletedEventId = false,
@@ -491,9 +495,11 @@ class TaskItem {
       priority: priority ?? this.priority,
       scheduledDate: scheduledDate ?? this.scheduledDate,
       dateSource: dateSource ?? this.dateSource,
-      dueTime: dueTime ?? this.dueTime,
-      reminderId: reminderId ?? this.reminderId,
-      repeatRuleId: repeatRuleId ?? this.repeatRuleId,
+      dueTime: clearDueTime ? null : dueTime ?? this.dueTime,
+      reminderId: clearReminderId ? null : reminderId ?? this.reminderId,
+      repeatRuleId: clearRepeatRuleId
+          ? null
+          : repeatRuleId ?? this.repeatRuleId,
       parentLongTermTaskId: parentLongTermTaskId,
       rewardEligible: rewardEligible,
       completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
@@ -863,6 +869,29 @@ class ReminderIntent {
     );
   }
 
+  factory ReminderIntent.localTime({
+    required String reminderId,
+    required String taskId,
+    required DateTime localDate,
+    required String timeOfDay,
+  }) {
+    final minutes = _parseTimeOfDay(timeOfDay);
+    final plannedAt = DateTime(
+      localDate.year,
+      localDate.month,
+      localDate.day,
+      minutes ~/ 60,
+      minutes % 60,
+    );
+
+    return ReminderIntent(
+      reminderId: reminderId,
+      taskId: taskId,
+      plannedAt: plannedAt,
+      deliverAt: plannedAt,
+    );
+  }
+
   String get eventName => 'notification_scheduled';
 
   Map<String, Object?> get payload {
@@ -882,6 +911,23 @@ class ReminderIntent {
   final DateTime deliverAt;
   final int offsetMinutes;
   final bool respectDnd;
+}
+
+int _parseTimeOfDay(String timeOfDay) {
+  final match = RegExp(
+    r'^([01]?\d|2[0-3]):([0-5]\d)$',
+  ).firstMatch(timeOfDay.trim());
+  if (match == null) {
+    throw ArgumentError.value(
+      timeOfDay,
+      'timeOfDay',
+      'Expected a local time in HH:mm format.',
+    );
+  }
+
+  final hour = int.parse(match.group(1)!);
+  final minute = int.parse(match.group(2)!);
+  return hour * 60 + minute;
 }
 
 class LongTermTask {

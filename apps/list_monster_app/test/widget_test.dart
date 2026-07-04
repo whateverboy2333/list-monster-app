@@ -145,17 +145,93 @@ void main() {
 
     controller.createTask(
       '缴水电费',
-      withTonightReminder: true,
+      reminderTime: '21:30',
       repeatRuleId: 'monthly_placeholder',
     );
 
     expect(controller.reminderIntents, hasLength(1));
     expect(controller.tasks.single.reminderId, 'rem_1');
+    expect(controller.tasks.single.dueTime, '21:30');
     expect(controller.tasks.single.repeatRuleId, 'monthly_placeholder');
+    expect(controller.reminderIntents.single.plannedAt.hour, 21);
+    expect(controller.reminderIntents.single.plannedAt.minute, 30);
     expect(
       controller.reminderIntents.single.eventName,
       'notification_scheduled',
     );
+  });
+
+  test('node 4 controller edits existing task reminder and repeat options', () {
+    final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+    controller.createTask('缴水电费');
+    final taskId = controller.tasks.single.id;
+
+    controller.setTaskRepeatPlaceholder(taskId, true);
+    expect(
+      controller.tasks.single.repeatRuleId,
+      TaskSystemController.repeatPlaceholderRuleId,
+    );
+
+    controller.setTaskReminderIntent(taskId, '22:15');
+    expect(controller.tasks.single.dueTime, '22:15');
+    expect(controller.tasks.single.reminderId, 'rem_1');
+    expect(controller.reminderIntents.single.plannedAt.hour, 22);
+    expect(controller.reminderIntents.single.plannedAt.minute, 15);
+
+    controller.setTaskRepeatPlaceholder(taskId, false);
+    controller.setTaskReminderIntent(taskId, null);
+    expect(controller.tasks.single.repeatRuleId, isNull);
+    expect(controller.tasks.single.dueTime, isNull);
+    expect(controller.tasks.single.reminderId, isNull);
+    expect(controller.reminderIntents, isEmpty);
+  });
+
+  testWidgets('shows scoped new-task options and edits existing task options', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ListMonsterApp());
+
+    Finder titleInput() => find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField && widget.decoration?.labelText == '今天要完成什么',
+    );
+
+    expect(find.text('新任务选项'), findsOneWidget);
+    expect(find.textContaining('只应用到下一次新增的任务'), findsOneWidget);
+
+    final addButton = find.text('加入今日');
+    await tester.enterText(titleInput(), '缴水电费');
+    await tester.ensureVisible(addButton);
+    await tester.tap(addButton);
+    await tester.pump();
+
+    final repeatButton = find.byTooltip('设为重复占位');
+    await tester.ensureVisible(repeatButton);
+    await tester.tap(repeatButton);
+    await tester.pump();
+    expect(find.textContaining('active · inbox · 重复占位'), findsOneWidget);
+
+    final reminderButton = find.byTooltip('设置提醒时间');
+    await tester.ensureVisible(reminderButton);
+    await tester.tap(reminderButton);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), '22:15');
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('提醒 22:15'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(SwitchListTile, '新任务重复占位'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(SwitchListTile, '新任务提醒意图'));
+    await tester.pump();
+    await tester.enterText(find.widgetWithText(TextField, '提醒时间'), '21:30');
+    await tester.enterText(titleInput(), '明天买牛奶');
+    await tester.ensureVisible(addButton);
+    await tester.tap(addButton);
+    await tester.pump();
+
+    expect(find.textContaining('提醒 21:30 · 重复占位'), findsOneWidget);
   });
 
   testWidgets('shows node 4 list grouping and restore entry points', (

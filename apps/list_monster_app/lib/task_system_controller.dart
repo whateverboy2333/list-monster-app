@@ -27,6 +27,8 @@ class TaskSystemController extends ChangeNotifier {
     );
   }
 
+  static const repeatPlaceholderRuleId = 'repeat_placeholder';
+
   final String userId;
   final String timezoneId;
   final DateTime today;
@@ -122,11 +124,15 @@ class TaskSystemController extends ChangeNotifier {
     String listId = 'inbox',
     TaskPriority priority = TaskPriority.none,
     bool withTonightReminder = false,
+    String? reminderTime,
     String? repeatRuleId,
     DateTime? scheduledDate,
   }) {
     final id = 'task_${_nextTaskNumber++}';
-    final reminderId = withTonightReminder
+    final effectiveReminderTime =
+        _normalizeReminderTime(reminderTime) ??
+        (withTonightReminder ? '20:00' : null);
+    final reminderId = effectiveReminderTime != null
         ? 'rem_${_nextReminderNumber++}'
         : null;
     final draft = TaskDraft(
@@ -134,7 +140,7 @@ class TaskSystemController extends ChangeNotifier {
       listId: listId,
       priority: priority,
       scheduledDate: scheduledDate,
-      dueTime: withTonightReminder ? '20:00' : null,
+      dueTime: effectiveReminderTime,
       reminderId: reminderId,
       repeatRuleId: repeatRuleId,
     );
@@ -154,15 +160,67 @@ class TaskSystemController extends ChangeNotifier {
       task.toCreatedEvent(eventId: _nextEventId(), createdAt: DateTime.now()),
     );
 
-    if (withTonightReminder && reminderId != null) {
-      final reminder = ReminderIntent.tonight(
+    if (effectiveReminderTime != null && reminderId != null) {
+      final reminder = ReminderIntent.localTime(
         reminderId: reminderId,
         taskId: id,
-        localNow: today,
+        localDate: today,
+        timeOfDay: effectiveReminderTime,
       );
       _reminderIntents.add(reminder);
       _events.add(reminder);
     }
+
+    notifyListeners();
+  }
+
+  void setTaskRepeatPlaceholder(String taskId, bool enabled) {
+    final index = _tasks.indexWhere((task) => task.id == taskId);
+    if (index == -1) {
+      return;
+    }
+
+    _tasks[index] = _tasks[index].copyWith(
+      repeatRuleId: enabled ? repeatPlaceholderRuleId : null,
+      clearRepeatRuleId: !enabled,
+    );
+
+    notifyListeners();
+  }
+
+  void setTaskReminderIntent(String taskId, String? reminderTime) {
+    final index = _tasks.indexWhere((task) => task.id == taskId);
+    if (index == -1) {
+      return;
+    }
+
+    final normalizedReminderTime = _normalizeReminderTime(reminderTime);
+    if (normalizedReminderTime == null) {
+      _tasks[index] = _tasks[index].copyWith(
+        clearDueTime: true,
+        clearReminderId: true,
+      );
+      _reminderIntents.removeWhere((intent) => intent.taskId == taskId);
+      notifyListeners();
+      return;
+    }
+
+    final reminderId =
+        _tasks[index].reminderId ?? 'rem_${_nextReminderNumber++}';
+    _tasks[index] = _tasks[index].copyWith(
+      dueTime: normalizedReminderTime,
+      reminderId: reminderId,
+    );
+    _reminderIntents.removeWhere((intent) => intent.taskId == taskId);
+
+    final reminder = ReminderIntent.localTime(
+      reminderId: reminderId,
+      taskId: taskId,
+      localDate: today,
+      timeOfDay: normalizedReminderTime,
+    );
+    _reminderIntents.add(reminder);
+    _events.add(reminder);
 
     notifyListeners();
   }
@@ -477,6 +535,22 @@ class TaskSystemController extends ChangeNotifier {
   }
 
   String _nextEventId() => 'evt_${_nextEventNumber++}';
+}
+
+String? _normalizeReminderTime(String? reminderTime) {
+  final value = reminderTime?.trim();
+  if (value == null || value.isEmpty) {
+    return null;
+  }
+
+  final match = RegExp(r'^([01]?\d|2[0-3]):([0-5]\d)$').firstMatch(value);
+  if (match == null) {
+    return null;
+  }
+
+  final hour = int.parse(match.group(1)!);
+  final minute = match.group(2)!;
+  return '${hour.toString().padLeft(2, '0')}:$minute';
 }
 
 DateTime _dateOnly(DateTime value) =>
