@@ -10,7 +10,7 @@
 
 节点 2：工程骨架 + 初始 commit，已完成。Flutter monorepo 基础工程已建立，项目可通过 Web 本地启动、基础测试和 lint 已通过，并形成初始 commit。
 
-节点 3：核心闭环 Alpha，待启动。
+节点 3：核心闭环 Alpha，已通过 PM 验收，准备合并入主分支。
 
 ## Agent 名册
 
@@ -66,37 +66,7 @@
 
 详见 [node-roadmap-freeze.md](node-roadmap-freeze.md)。
 
-## 当前完成节点：节点 2
-
-节点 2 名称：工程骨架 + 初始 commit。
-
-负责人：`AG-CLIENT-01`
-
-输出物：
-
-```text
-apps/list_monster_app/
-packages/core/
-packages/task_domain/
-packages/monster_domain/
-packages/local_store/
-packages/sync_domain/
-packages/companion_contract/
-packages/sprite_runtime/
-packages/ui_kit/
-```
-
-通过标准：
-
-1. 项目能启动。
-2. 能跑基础测试。
-3. 有 lint。
-4. 有初始 commit。
-5. 节点 2 完成后，才能给代码型 Agent 分配独立 worktree 并行开发。
-
-节点 2 交付摘要详见 [node-2-engineering-skeleton-summary.md](node-2-engineering-skeleton-summary.md)。
-
-## 当前待启动节点：节点 3
+## 当前完成节点：节点 3
 
 节点 3 名称：核心闭环 Alpha。
 
@@ -115,6 +85,31 @@ AG-QA-01：验收
 1. 不依赖云同步、不依赖桌宠。
 2. 能在本地跑通“获得怪兽蛋 -> 创建任务 -> 完成任务 -> 能量反馈 -> XP 增长 -> 怪兽状态变化 -> 今日任务激励触发”。
 3. 打勾反馈不被网络、同步或外部陪伴场域阻塞。
+
+节点 3 交付摘要详见 [node-3-core-loop-alpha-summary.md](node-3-core-loop-alpha-summary.md)。
+
+## 当前待启动节点：节点 4
+
+节点 4 名称：任务系统 P0 完成。
+
+范围：
+
+```text
+快速创建
+今日视图
+清单分组
+任务完成 / 撤销 / 删除 / 恢复
+长期任务拆解
+无压清理
+重复规则基础能力
+提醒意图
+```
+
+关键验收：
+
+1. 取消 / 放下不产生 XP。
+2. `task_restored` 能正确恢复任务。
+3. 长期任务不能直接完成，只能由拆解任务汇总达成。
 
 ## 进入代码开发前准入门槛
 
