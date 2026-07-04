@@ -58,21 +58,51 @@ flutter run -d web-server --web-hostname 127.0.0.1 --web-port 5202
 
 结果：Web build 通过；本地 `http://127.0.0.1:5202` 返回 HTTP 200。
 
+平台构建验收：
+
+```powershell
+flutter build apk --debug
+flutter build windows --debug
+```
+
+结果：
+
+1. Android debug APK 构建通过，产物为 `apps/list_monster_app/build/app/outputs/flutter-apk/app-debug.apk`。
+2. Windows debug build 构建通过，产物为 `apps/list_monster_app/build/windows/x64/runner/Debug/list_monster_app.exe`。
+
 ## 工具链状态
 
 已可用：
 
 1. Flutter 3.44.4 stable，安装位置为 `C:\Users\huawei\tools\flutter`。
 2. Dart 3.12.2。
-3. Chrome / Edge Web 运行目标。
+3. JDK 17.0.19，安装位置为 `C:\Users\huawei\tools\jdk-17`。
+4. Android SDK 36.0.0，安装位置为 `C:\Users\huawei\AppData\Local\Android\Sdk`。
+5. Android SDK Platform 36、Build-Tools 36.0.0、Platform-Tools 37.0.0。
+6. Android NDK r28c，版本 `28.2.13676358`。
+7. Visual Studio Build Tools 2022 17.14.35，包含 C++ 桌面构建链路。
+8. Windows 10 SDK `10.0.26100.0`。
+9. Chrome / Edge Web 运行目标。
 
-当前本机限制：
+本机环境变量：
 
-1. Android SDK 未安装，因此暂不能验 Android 真机 / 模拟器。
-2. Visual Studio C++ 桌面工作负载未安装，因此 `flutter build windows --debug` 暂不能完成。
+1. `JAVA_HOME=C:\Users\huawei\tools\jdk-17`
+2. `ANDROID_HOME=C:\Users\huawei\AppData\Local\Android\Sdk`
+3. `ANDROID_SDK_ROOT=C:\Users\huawei\AppData\Local\Android\Sdk`
+4. 用户级 `PATH` 已加入 Flutter、JDK、Android command-line tools 和 platform-tools。
 
-以上限制属于本机工具链缺口，不影响节点 2 的 Web 本地启动、lint 和基础测试验收。
+当前 `flutter doctor -v` 结果：No issues found。
+
+## Windows 中文路径处理
+
+当前仓库路径包含中文字符。Android Gradle Plugin 在 Windows 上会默认拦截非 ASCII 项目路径，因此已在 `apps/list_monster_app/android/gradle.properties` 增加：
+
+```properties
+android.overridePathCheck=true
+```
+
+该配置只用于允许当前中文路径工作区完成 Android 构建，不改变业务逻辑。
 
 ## 节点 3 准入
 
-节点 2 完成后，可以进入节点 3：核心闭环 Alpha。代码型 Agent 可以在初始 commit 之后基于独立 worktree 并行开发，但必须继续遵守冻结节点路线和 `docs/contracts/` 契约。
+节点 2 工程骨架与本机工具链均已完成。按 PM 当前指令，节点 3：核心闭环 Alpha 尚未启动；后续启动时，代码型 Agent 必须继续遵守冻结节点路线和 `docs/contracts/` 契约。

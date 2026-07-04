@@ -4,7 +4,7 @@
 
 当前状态：节点 2，工程骨架 + 初始 commit，已完成。
 
-下一节点：节点 3，核心闭环 Alpha。
+下一节点：节点 3，核心闭环 Alpha，尚未启动。
 
 节点路线图唯一事实源：[docs/pm/node-roadmap-freeze.md](docs/pm/node-roadmap-freeze.md)。
 
@@ -35,6 +35,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tool\verify_node2.ps1
 ```powershell
 cd .\apps\list_monster_app
 flutter run -d web-server --web-hostname 127.0.0.1 --web-port 5202
+```
+
+当前本机已补齐 Android 与 Windows 构建链路，可运行：
+
+```powershell
+cd .\apps\list_monster_app
+flutter build apk --debug
+flutter build windows --debug
 ```
 
 本仓库当前使用 Flutter app + Dart/Flutter package 混合结构；节点 3 开始实现核心闭环 Alpha。
