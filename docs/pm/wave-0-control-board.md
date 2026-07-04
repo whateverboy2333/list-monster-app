@@ -10,7 +10,7 @@
 
 节点 2：工程骨架 + 初始 commit，已完成。Flutter monorepo 基础工程已建立，项目可通过 Web 本地启动、基础测试和 lint 已通过，并形成初始 commit。
 
-节点 3：核心闭环 Alpha，已在分支 `codex/node3-core-loop-alpha` 实现并通过本机验证，待 PM 合并确认。
+节点 3：核心闭环 Alpha，已通过 PM 验收，准备合并入主分支。
 
 ## Agent 名册
 
