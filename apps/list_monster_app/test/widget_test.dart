@@ -17,6 +17,51 @@ void main() {
     expect(find.text('小单正在等第一个任务'), findsOneWidget);
   });
 
+  testWidgets('switches app language and localizes date picker', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ListMonsterApp());
+
+    expect(find.text('今日'), findsWidgets);
+    await tester.tap(find.text('EN'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Today'), findsWidgets);
+    expect(find.text('List Monster'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(const ListMonsterApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Today'), findsWidgets);
+    expect(find.text('List Monster'), findsOneWidget);
+
+    await tester.tap(find.text('Long-term'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create Long-term Task'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Long-term Goal'), findsOneWidget);
+    expect(find.text('Start Date'), findsOneWidget);
+    expect(find.text('End Date'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('long-term-start-date-picker')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Select Start Date'), findsOneWidget);
+    expect(find.text('OK'), findsOneWidget);
+    await tester.tap(find.text('Cancel').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('中'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('清单怪兽'), findsOneWidget);
+    expect(find.text('长期'), findsOneWidget);
+  });
+
   testWidgets('runs the node 3 local core loop', (tester) async {
     await tester.pumpWidget(const ListMonsterApp());
 

@@ -1,25 +1,348 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:monster_domain/monster_domain.dart';
 import 'package:sprite_runtime/sprite_runtime.dart';
 import 'package:task_domain/task_domain.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'language_preference_store.dart';
 import 'task_system_controller.dart';
 
 void main() {
   runApp(const ListMonsterApp());
 }
 
-class ListMonsterApp extends StatelessWidget {
+enum AppLanguage { zh, en }
+
+extension on AppLanguage {
+  String get code {
+    return switch (this) {
+      AppLanguage.zh => 'zh',
+      AppLanguage.en => 'en',
+    };
+  }
+
+  Locale get locale {
+    return switch (this) {
+      AppLanguage.zh => const Locale('zh', 'CN'),
+      AppLanguage.en => const Locale('en'),
+    };
+  }
+}
+
+AppLanguage? _languageFromCode(String? code) {
+  return switch (code) {
+    'zh' => AppLanguage.zh,
+    'en' => AppLanguage.en,
+    _ => null,
+  };
+}
+
+class AppLanguageScope extends InheritedWidget {
+  const AppLanguageScope({
+    super.key,
+    required this.language,
+    required this.strings,
+    required this.onLanguageChanged,
+    required super.child,
+  });
+
+  final AppLanguage language;
+  final AppStrings strings;
+  final ValueChanged<AppLanguage> onLanguageChanged;
+
+  static AppLanguageScope of(BuildContext context) {
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<AppLanguageScope>();
+    assert(scope != null, 'AppLanguageScope is missing.');
+    return scope!;
+  }
+
+  @override
+  bool updateShouldNotify(AppLanguageScope oldWidget) {
+    return language != oldWidget.language || strings != oldWidget.strings;
+  }
+}
+
+extension AppLanguageContext on BuildContext {
+  AppLanguageScope get languageScope => AppLanguageScope.of(this);
+  AppStrings get s => languageScope.strings;
+}
+
+class AppStrings {
+  const AppStrings(this.language);
+
+  final AppLanguage language;
+
+  bool get isZh => language == AppLanguage.zh;
+
+  String pick(String zh, String en) => isZh ? zh : en;
+
+  String get appTitle => pick('清单怪兽', 'List Monster');
+  String get tabToday => pick('今日', 'Today');
+  String get tabLongTerm => pick('长期', 'Long-term');
+  String get tabMonster => pick('怪兽', 'Monster');
+  String get tabMe => pick('我的', 'Me');
+  String get mePlaceholder => pick(
+    '游客、通知、勿扰和桌宠开关会在后续节点接入。',
+    'Guest mode, notifications, focus mode, and desktop pet settings will arrive in later nodes.',
+  );
+
+  String get todaySubtitle => pick('把小事喂给小单。', 'Feed small tasks to Xiaodan.');
+  String get firstTaskWaiting =>
+      pick('小单正在等第一个任务', 'Xiaodan is waiting for the first task');
+  String get newTaskLabel => pick('今天要完成什么', 'What needs to get done today?');
+  String get addToToday => pick('加入今日', 'Add to Today');
+  String get todayTasks => pick('今日任务', 'Today Tasks');
+  String get noTodayTasks => pick(
+    '今日没有待处理任务。已放下或删除的任务可在下方恢复。',
+    'No active tasks today. Let-go or deleted tasks can be restored below.',
+  );
+  String get cancelledTasks => pick('已放下', 'Let Go');
+  String get deletedTasks => pick('已删除', 'Deleted');
+
+  String get newTaskOptions => pick('新任务选项', 'New Task Options');
+  String get newTaskOptionsHint => pick(
+    '只应用到下一次新增的任务；已有任务可在任务行修改。',
+    'Only applies to the next new task. Existing tasks can be edited in their row.',
+  );
+  String get repeatPlaceholder => pick('新任务重复占位', 'Repeat placeholder');
+  String get repeatPlaceholderHint => pick(
+    '保存 repeatRuleId，不生成重复实例',
+    'Stores repeatRuleId without generating repeated tasks.',
+  );
+  String get reminderIntent => pick('新任务提醒意图', 'Reminder intent');
+  String get reminderIntentHint => pick(
+    '只记录提醒计划，不调度系统通知',
+    'Records the reminder plan without scheduling system notifications.',
+  );
+  String get reminderTime => pick('提醒时间', 'Reminder time');
+  String get invalidReminderTime =>
+      pick('请输入 00:00-23:59', 'Enter 00:00-23:59');
+
+  String get longTermTasks => pick('长期任务', 'Long-term Tasks');
+  String get longTermSubtitle => pick(
+    '超过一天的目标，先拆成每日可完成的小任务。',
+    'Break goals spanning more than one day into daily steps.',
+  );
+  String get createLongTermTask => pick('创建长期任务', 'Create Long-term Task');
+  String get emptyLongTerm => pick(
+    '还没有长期任务。创建时先写目标，再拆成每天的小任务。',
+    'No long-term tasks yet. Start with a goal, then break it into daily steps.',
+  );
+  String get editDateAndBreakdown => pick('编辑日期与拆解', 'Edit Dates and Steps');
+  String get completedChildOutsideRange => pick(
+    '不能把已完成的拆解任务排除出长期任务日期范围。',
+    'Completed steps cannot be excluded from the long-term date range.',
+  );
+  String get longTermSaveFailed => pick(
+    '长期任务日期没有保存，请检查日期和拆解项。',
+    'Long-term dates were not saved. Check the dates and steps.',
+  );
+  String get adjustLongTermDates => pick('调整长期任务日期', 'Adjust Long-term Dates');
+  String activeChildrenOutsideRange(int count) => pick(
+    '新的日期范围会排除 $count 个未完成拆解任务。保存后这些任务会被放下，不产生 XP。',
+    'The new date range excludes $count unfinished step(s). After saving, they will be let go and will not grant XP.',
+  );
+  String get cancelSave => pick('取消保存', 'Cancel');
+  String get confirmSave => pick('确认保存', 'Save');
+  String get pickDateSemanticPrefix => pick('选择', 'Select ');
+  String get createLongTermDialog => pick('创建长期任务', 'Create Long-term Task');
+  String get editLongTermDialog => pick('编辑长期任务', 'Edit Long-term Task');
+  String get longTermGoal => pick('长期目标', 'Long-term Goal');
+  String get longTermGoalHint =>
+      pick('例如：准备考试', 'Example: Prepare for an exam');
+  String get requiredLongTermGoal => pick('请输入长期目标', 'Enter a long-term goal');
+  String get startDate => pick('开始日期', 'Start Date');
+  String get dueDate => pick('截止日期', 'End Date');
+  String generatedDailyTasks(int count) =>
+      pick('当前会生成 $count 个每日拆解任务', '$count daily step(s) will be generated');
+  String get breakdownRoute => pick('拆解路线', 'Breakdown Route');
+  String get manualBreakdown => pick('手动拆解', 'Manual');
+  String get aiBreakdownLater => pick('AI 拆解（后续）', 'AI Breakdown (Later)');
+  String get breakdownHint => pick(
+    '手动拆解会按天生成对应日期的任务；AI 拆解会在后续版本根据目标生成草案。',
+    'Manual breakdown creates dated daily tasks. AI breakdown will draft steps from the goal in a later version.',
+  );
+  String dayTaskLabel(int day) => pick('第 $day 天任务', 'Day $day Task');
+  String requiredDayTask(int day) =>
+      pick('请输入第 $day 天任务', 'Enter the day $day task');
+  String get cancel => pick('取消', 'Cancel');
+  String get create => pick('创建', 'Create');
+  String get save => pick('保存', 'Save');
+  String get pickStartDate => pick('选择开始日期', 'Select Start Date');
+  String get pickDueDate => pick('选择截止日期', 'Select End Date');
+  String get confirm => pick('确定', 'OK');
+  String get startPrep => pick('启动准备', 'Kickoff');
+  String get finalCheck => pick('收尾检查', 'Final Check');
+  String get progressOutput => pick('推进产出', 'Progress Output');
+  String stepHint(int index, int dayCount) {
+    if (index == 0) {
+      return pick(
+        '$startPrep：整理资料、明确范围、列出第一步',
+        '$startPrep: collect materials, clarify scope, define the first step',
+      );
+    }
+    if (index == dayCount - 1) {
+      return pick(
+        '$finalCheck：复盘检查、完成提交、整理成果',
+        '$finalCheck: review, submit, and organize the result',
+      );
+    }
+    return pick(
+      '$progressOutput：完成一个可检查的小成果',
+      '$progressOutput: finish one checkable output',
+    );
+  }
+
+  String get cleanupTitle => pick('无压清理', 'No-pressure Cleanup');
+  String get cleanupHint => pick(
+    '今天暂时做不完的任务，可以先放下，不产生 XP 惩罚。',
+    'Tasks that cannot be done today can be let go without XP punishment.',
+  );
+  String get letGoUnfinished => pick('放下未完成', 'Let Go Unfinished');
+  String get undoLastCleanup => pick('撤销最近清理', 'Undo Last Cleanup');
+  String taskCount(int count) => pick('$count 个任务', '$count task(s)');
+  String get empty => pick('暂无', 'None');
+  String get restore => pick('恢复', 'Restore');
+
+  String taskStatus(TaskStatus status) {
+    return switch (status) {
+      TaskStatus.active => pick('进行中', 'Active'),
+      TaskStatus.completed => pick('已完成', 'Completed'),
+      TaskStatus.cancelled => pick('已放下', 'Let Go'),
+      TaskStatus.deleted => pick('已删除', 'Deleted'),
+    };
+  }
+
+  String longTermStatus(LongTermTaskStatus status) {
+    return switch (status) {
+      LongTermTaskStatus.active => pick('进行中', 'Active'),
+      LongTermTaskStatus.achieved => pick('已完成', 'Completed'),
+      LongTermTaskStatus.cancelled => pick('已取消', 'Cancelled'),
+      LongTermTaskStatus.deleted => pick('已删除', 'Deleted'),
+    };
+  }
+
+  String monsterMood(MonsterMood mood) {
+    return switch (mood) {
+      MonsterMood.idle => pick('空闲', 'Idle'),
+      MonsterMood.energetic => pick('元气', 'Energetic'),
+      MonsterMood.expecting => pick('期待', 'Expecting'),
+      MonsterMood.sleeping => pick('睡觉', 'Sleeping'),
+      MonsterMood.missing => pick('想念', 'Missing'),
+    };
+  }
+
+  String monsterStage(MonsterStage stage) {
+    return switch (stage) {
+      MonsterStage.egg => pick('怪兽蛋', 'Monster Egg'),
+      MonsterStage.child => pick('幼年', 'Child'),
+      MonsterStage.teen => pick('少年', 'Teen'),
+      MonsterStage.adult => pick('成年', 'Adult'),
+    };
+  }
+
+  String monsterAction(MonsterSnapshot monster, String fallback) {
+    if (language == AppLanguage.zh) {
+      return fallback;
+    }
+    return switch (monster.moodState) {
+      MonsterMood.expecting => 'Waiting for a task',
+      MonsterMood.energetic => 'Full of energy',
+      MonsterMood.sleeping => 'Sleeping',
+      MonsterMood.missing => 'Missing you',
+      MonsterMood.idle => 'Waiting',
+    };
+  }
+
+  String get completedPrefix => pick('完成', 'Done');
+  String get setRepeatPlaceholder => pick('设为重复占位', 'Set repeat placeholder');
+  String get cancelRepeatPlaceholder =>
+      pick('取消重复占位', 'Cancel repeat placeholder');
+  String get setReminderTime => pick('设置提醒时间', 'Set reminder time');
+  String get undoCompletion => pick('撤销完成', 'Undo completion');
+  String get letGoTask => pick('放下任务', 'Let go task');
+  String get deleteTask => pick('删除任务', 'Delete task');
+  String reminderSubtitle(String? dueTime) =>
+      pick('提醒 ${dueTime ?? '已设置'}', 'Reminder ${dueTime ?? 'set'}');
+  String get repeatPlaceholderShort => pick('重复占位', 'Repeat placeholder');
+  String get longTermChild => pick('长期拆解', 'Long-term step');
+  String get clear => pick('清除', 'Clear');
+
+  String milestoneTitle(DailyTaskMilestone milestone) {
+    if (language == AppLanguage.zh) {
+      return milestone.title;
+    }
+    return switch (milestone.milestoneKey) {
+      'small_start' => 'Nice Start',
+      'fruitful_day' => 'Fruitful Day',
+      _ => milestone.title,
+    };
+  }
+
+  String get monsterSubtitle =>
+      pick('小单的成长只来自真实完成。', 'Xiaodan only grows from real completed tasks.');
+  String levelLine(MonsterSnapshot monster) => pick(
+    '等级 ${monster.level} · ${monsterMood(monster.moodState)}',
+    'Level ${monster.level} · ${monsterMood(monster.moodState)}',
+  );
+}
+
+class ListMonsterApp extends StatefulWidget {
   const ListMonsterApp({super.key});
 
   @override
+  State<ListMonsterApp> createState() => _ListMonsterAppState();
+}
+
+class _ListMonsterAppState extends State<ListMonsterApp> {
+  final LanguagePreferenceStore _languageStore = LanguagePreferenceStore();
+  AppLanguage _language = AppLanguage.zh;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreLanguage();
+  }
+
+  Future<void> _restoreLanguage() async {
+    final storedLanguage = _languageFromCode(
+      await _languageStore.readLanguageCode(),
+    );
+    if (!mounted || storedLanguage == null || storedLanguage == _language) {
+      return;
+    }
+    setState(() => _language = storedLanguage);
+  }
+
+  Future<void> _changeLanguage(AppLanguage language) async {
+    if (_language != language) {
+      setState(() => _language = language);
+    }
+    await _languageStore.writeLanguageCode(language.code);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: '清单怪兽',
-      theme: ListMonsterTheme.light(),
-      home: const ListMonsterShell(),
+    final strings = AppStrings(_language);
+    return AppLanguageScope(
+      language: _language,
+      strings: strings,
+      onLanguageChanged: _changeLanguage,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: strings.appTitle,
+        locale: _language.locale,
+        supportedLocales: const [Locale('zh', 'CN'), Locale('en')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        theme: ListMonsterTheme.light(),
+        home: const ListMonsterShell(),
+      ),
     );
   }
 }
@@ -49,32 +372,65 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.s;
     final tabs = [
       TodayTab(controller: _taskSystem),
       LongTermTab(controller: _taskSystem),
       MonsterTab(controller: _taskSystem),
-      const PlaceholderTab(title: '我的', message: '游客、通知、勿扰和桌宠开关会在后续节点接入。'),
+      PlaceholderTab(title: strings.tabMe, message: strings.mePlaceholder),
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('清单怪兽')),
+      appBar: AppBar(
+        title: Text(strings.appTitle),
+        actions: const [_LanguageToggle(), SizedBox(width: 12)],
+      ),
       body: tabs[_tabIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
         onDestinationSelected: (index) => setState(() => _tabIndex = index),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.today_outlined), label: '今日'),
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            label: '长期',
+            icon: const Icon(Icons.today_outlined),
+            label: strings.tabToday,
           ),
           NavigationDestination(
-            icon: Icon(Icons.egg_alt_outlined),
-            label: '怪兽',
+            icon: const Icon(Icons.calendar_month_outlined),
+            label: strings.tabLongTerm,
           ),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: '我的'),
+          NavigationDestination(
+            icon: const Icon(Icons.egg_alt_outlined),
+            label: strings.tabMonster,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.person_outline),
+            label: strings.tabMe,
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _LanguageToggle extends StatelessWidget {
+  const _LanguageToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = context.languageScope;
+    return SegmentedButton<AppLanguage>(
+      showSelectedIcon: false,
+      style: const ButtonStyle(
+        visualDensity: VisualDensity(horizontal: -4, vertical: -4),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      segments: const [
+        ButtonSegment(value: AppLanguage.zh, label: Text('中')),
+        ButtonSegment(value: AppLanguage.en, label: Text('EN')),
+      ],
+      selected: {scope.language},
+      onSelectionChanged: (selection) =>
+          scope.onLanguageChanged(selection.single),
     );
   }
 }
@@ -109,6 +465,7 @@ class _TodayTabState extends State<TodayTab> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
+        final strings = context.s;
         final controller = widget.controller;
         final milestone = controller.latestMilestone;
         final todayTasks = controller.todayTasks;
@@ -118,26 +475,32 @@ class _TodayTabState extends State<TodayTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const ListMonsterSectionHeader(title: '今日', subtitle: '把小事喂给小单。'),
+              ListMonsterSectionHeader(
+                title: strings.tabToday,
+                subtitle: strings.todaySubtitle,
+              ),
               const SizedBox(height: 20),
               MonsterSpritePlaceholder(
-                moodLabel: controller.monster.moodState.label,
-                actionLabel: controller.monsterActionLabel,
+                moodLabel: strings.monsterMood(controller.monster.moodState),
+                actionLabel: strings.monsterAction(
+                  controller.monster,
+                  controller.monsterActionLabel,
+                ),
               ),
               const SizedBox(height: 16),
               _MonsterStatusStrip(controller: controller),
               const SizedBox(height: 20),
               if (!controller.hasTasks)
                 Text(
-                  '小单正在等第一个任务',
+                  strings.firstTaskWaiting,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               if (!controller.hasTasks) const SizedBox(height: 20),
               TextField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: '今天要完成什么',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: strings.newTaskLabel,
+                  border: const OutlineInputBorder(),
                 ),
                 onSubmitted: (_) => _createTask(),
               ),
@@ -164,13 +527,16 @@ class _TodayTabState extends State<TodayTab> {
               FilledButton.icon(
                 onPressed: _createTask,
                 icon: const Icon(Icons.add_task_outlined),
-                label: const Text('加入今日'),
+                label: Text(strings.addToToday),
               ),
               const SizedBox(height: 24),
-              Text('今日任务', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                strings.todayTasks,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               if (todayTasks.isEmpty && controller.hasTasks)
-                const Text('今日没有待处理任务。已放下或删除的任务可在下方恢复。'),
+                Text(strings.noTodayTasks),
               if (todayTasks.isNotEmpty)
                 ...todayTasks.map(
                   (task) => _TaskTile(
@@ -195,12 +561,12 @@ class _TodayTabState extends State<TodayTab> {
               _TodayCleanupActions(controller: controller),
               const SizedBox(height: 16),
               _RecoverableSection(
-                title: '已放下',
+                title: strings.cancelledTasks,
                 tasks: controller.cancelledTasks,
                 onRestore: controller.restoreTask,
               ),
               _RecoverableSection(
-                title: '已删除',
+                title: strings.deletedTasks,
                 tasks: controller.deletedTasks,
                 onRestore: controller.restoreTask,
               ),
@@ -216,7 +582,7 @@ class _TodayTabState extends State<TodayTab> {
         ? _normalizeReminderTimeInput(_reminderTimeController.text)
         : null;
     if (_withTaskReminder && reminderTime == null) {
-      setState(() => _reminderTimeError = '请输入 00:00-23:59');
+      setState(() => _reminderTimeError = context.s.invalidReminderTime);
       return;
     }
 
@@ -252,6 +618,7 @@ class _NewTaskOptions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.s;
     final colorScheme = Theme.of(context).colorScheme;
 
     return DecoratedBox(
@@ -264,23 +631,26 @@ class _NewTaskOptions extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('新任务选项', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              strings.newTaskOptions,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 4),
-            const Text('只应用到下一次新增的任务；已有任务可在任务行修改。'),
+            Text(strings.newTaskOptionsHint),
             const SizedBox(height: 8),
             SwitchListTile(
               value: repeatEnabled,
               onChanged: onRepeatChanged,
-              title: const Text('新任务重复占位'),
-              subtitle: const Text('保存 repeatRuleId，不生成重复实例'),
+              title: Text(strings.repeatPlaceholder),
+              subtitle: Text(strings.repeatPlaceholderHint),
               secondary: const Icon(Icons.repeat_outlined),
               contentPadding: EdgeInsets.zero,
             ),
             SwitchListTile(
               value: reminderEnabled,
               onChanged: onReminderEnabledChanged,
-              title: const Text('新任务提醒意图'),
-              subtitle: const Text('只记录提醒计划，不调度系统通知'),
+              title: Text(strings.reminderIntent),
+              subtitle: Text(strings.reminderIntentHint),
               secondary: const Icon(Icons.notifications_outlined),
               contentPadding: EdgeInsets.zero,
             ),
@@ -290,7 +660,7 @@ class _NewTaskOptions extends StatelessWidget {
                 child: TextField(
                   controller: reminderTimeController,
                   decoration: InputDecoration(
-                    labelText: '提醒时间',
+                    labelText: strings.reminderTime,
                     hintText: '20:30',
                     errorText: reminderTimeError,
                     border: const OutlineInputBorder(),
@@ -316,23 +686,23 @@ class LongTermTab extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final strings = context.s;
         return ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const ListMonsterSectionHeader(
-              title: '长期任务',
-              subtitle: '超过一天的目标，先拆成每日可完成的小任务。',
+            ListMonsterSectionHeader(
+              title: strings.longTermTasks,
+              subtitle: strings.longTermSubtitle,
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () =>
                   _showCreateLongTermTaskDialog(context, controller),
               icon: const Icon(Icons.add_task_outlined),
-              label: const Text('创建长期任务'),
+              label: Text(strings.createLongTermTask),
             ),
             const SizedBox(height: 20),
-            if (controller.longTermTasks.isEmpty)
-              const Text('还没有长期任务。创建时先写目标，再拆成每天的小任务。'),
+            if (controller.longTermTasks.isEmpty) Text(strings.emptyLongTerm),
             ...controller.longTermTasks.map((task) {
               final childTasks = controller.longTermChildTasks(
                 task.longTermTaskId,
@@ -345,7 +715,7 @@ class LongTermTab extends StatelessWidget {
                 subtitle: Text(
                   '${_formatDateRange(task.startDate, task.dueDate)} · '
                   '${task.completedTaskCount}/${task.totalTaskCount} · '
-                  '${task.status.label}',
+                  '${strings.longTermStatus(task.status)}',
                 ),
                 children: [
                   Align(
@@ -360,7 +730,7 @@ class LongTermTab extends StatelessWidget {
                             )
                           : null,
                       icon: const Icon(Icons.edit_calendar_outlined),
-                      label: const Text('编辑日期与拆解'),
+                      label: Text(strings.editDateAndBreakdown),
                     ),
                   ),
                   ...childTasks.map(
@@ -368,7 +738,7 @@ class LongTermTab extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                       leading: Text(_formatMonthDay(childTask.scheduledDate)),
                       title: Text(childTask.title),
-                      subtitle: Text(childTask.status.label),
+                      subtitle: Text(strings.taskStatus(childTask.status)),
                     ),
                   ),
                 ],
@@ -442,9 +812,9 @@ class LongTermTab extends StatelessWidget {
         )
         .length;
     if (completedOutsideRange > 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('不能把已完成的拆解任务排除出长期任务日期范围。')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.s.completedChildOutsideRange)),
+      );
       return;
     }
 
@@ -482,7 +852,7 @@ class LongTermTab extends StatelessWidget {
     if (!updated && context.mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('长期任务日期没有保存，请检查日期和拆解项。')));
+      ).showSnackBar(SnackBar(content: Text(context.s.longTermSaveFailed)));
     }
   }
 
@@ -493,16 +863,16 @@ class LongTermTab extends StatelessWidget {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('调整长期任务日期'),
-        content: Text('新的日期范围会排除 $affectedCount 个未完成拆解任务。保存后这些任务会被放下，不产生 XP。'),
+        title: Text(context.s.adjustLongTermDates),
+        content: Text(context.s.activeChildrenOutsideRange(affectedCount)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消保存'),
+            child: Text(context.s.cancelSave),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('确认保存'),
+            child: Text(context.s.confirmSave),
           ),
         ],
       ),
@@ -539,9 +909,10 @@ class _DatePickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.s;
     return Semantics(
       button: true,
-      label: '选择$label',
+      label: '${strings.pickDateSemanticPrefix}$label',
       child: InkWell(
         borderRadius: BorderRadius.circular(4),
         onTap: onTap,
@@ -609,8 +980,13 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.s;
     return AlertDialog(
-      title: Text(widget.initialPlan == null ? '创建长期任务' : '编辑长期任务'),
+      title: Text(
+        widget.initialPlan == null
+            ? strings.createLongTermDialog
+            : strings.editLongTermDialog,
+      ),
       content: SizedBox(
         width: 480,
         child: SingleChildScrollView(
@@ -623,12 +999,13 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                 TextFormField(
                   controller: _titleController,
                   autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: '长期目标',
-                    hintText: '例如：准备考试',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: strings.longTermGoal,
+                    hintText: strings.longTermGoalHint,
+                    border: const OutlineInputBorder(),
                   ),
-                  validator: (value) => _hasText(value) ? null : '请输入长期目标',
+                  validator: (value) =>
+                      _hasText(value) ? null : strings.requiredLongTermGoal,
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -636,7 +1013,7 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                     Expanded(
                       child: _DatePickerField(
                         key: const ValueKey('long-term-start-date-picker'),
-                        label: '开始日期',
+                        label: strings.startDate,
                         value: _startDate,
                         onTap: _pickStartDate,
                       ),
@@ -645,7 +1022,7 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                     Expanded(
                       child: _DatePickerField(
                         key: const ValueKey('long-term-due-date-picker'),
-                        label: '截止日期',
+                        label: strings.dueDate,
                         value: _dueDate,
                         onTap: _pickDueDate,
                       ),
@@ -655,19 +1032,28 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    '当前会生成 $_dayCount 个每日拆解任务',
+                    strings.generatedDailyTasks(_dayCount),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text('拆解路线', style: Theme.of(context).textTheme.titleSmall),
+                Text(
+                  strings.breakdownRoute,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: const [
-                    ChoiceChip(label: Text('手动拆解'), selected: true),
-                    InputChip(label: Text('AI 拆解（后续）'), isEnabled: false),
+                  children: [
+                    ChoiceChip(
+                      label: Text(strings.manualBreakdown),
+                      selected: true,
+                    ),
+                    InputChip(
+                      label: Text(strings.aiBreakdownLater),
+                      isEnabled: false,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -687,7 +1073,7 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '手动拆解会按天生成对应日期的任务；AI 拆解会在后续版本根据目标生成草案。',
+                            strings.breakdownHint,
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
@@ -703,12 +1089,13 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                     child: TextFormField(
                       controller: _stepControllers[index],
                       decoration: InputDecoration(
-                        labelText: '第 ${index + 1} 天任务',
+                        labelText: strings.dayTaskLabel(index + 1),
                         hintText: _stepHint(index),
                         border: const OutlineInputBorder(),
                       ),
-                      validator: (value) =>
-                          _hasText(value) ? null : '请输入第 ${index + 1} 天任务',
+                      validator: (value) => _hasText(value)
+                          ? null
+                          : strings.requiredDayTask(index + 1),
                     ),
                   ),
                 ),
@@ -720,11 +1107,13 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消'),
+          child: Text(strings.cancel),
         ),
         FilledButton(
           onPressed: _submit,
-          child: Text(widget.initialPlan == null ? '创建' : '保存'),
+          child: Text(
+            widget.initialPlan == null ? strings.create : strings.save,
+          ),
         ),
       ],
     );
@@ -756,7 +1145,7 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
 
   Future<void> _pickStartDate() async {
     final selectedDate = await _showLongTermDatePicker(
-      helpText: '选择开始日期',
+      helpText: context.s.pickStartDate,
       initialDate: _startDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
@@ -777,7 +1166,7 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
   Future<void> _pickDueDate() async {
     final firstDueDate = _startDate.add(const Duration(days: 1));
     final selectedDate = await _showLongTermDatePicker(
-      helpText: '选择截止日期',
+      helpText: context.s.pickDueDate,
       initialDate: _dueDate.isBefore(firstDueDate) ? firstDueDate : _dueDate,
       firstDate: firstDueDate,
       lastDate: DateTime(2100),
@@ -801,8 +1190,8 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
       firstDate: firstDate,
       lastDate: lastDate,
       helpText: helpText,
-      cancelText: '取消',
-      confirmText: '确定',
+      cancelText: context.s.cancel,
+      confirmText: context.s.confirm,
     );
   }
 
@@ -823,25 +1212,7 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
     );
   }
 
-  String _stepLabel(int index) {
-    if (index == 0) {
-      return '启动准备';
-    }
-    if (index == _dayCount - 1) {
-      return '收尾检查';
-    }
-    return '推进产出';
-  }
-
-  String _stepHint(int index) {
-    if (index == 0) {
-      return '${_stepLabel(index)}：整理资料、明确范围、列出第一步';
-    }
-    if (index == _dayCount - 1) {
-      return '${_stepLabel(index)}：复盘检查、完成提交、整理成果';
-    }
-    return '${_stepLabel(index)}：完成一个可检查的小成果';
-  }
+  String _stepHint(int index) => context.s.stepHint(index, _dayCount);
 }
 
 bool _hasText(String? value) => value != null && value.trim().isNotEmpty;
@@ -882,12 +1253,16 @@ class _TodayCleanupActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.s;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('无压清理', style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          strings.cleanupTitle,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 4),
-        const Text('今天暂时做不完的任务，可以先放下，不产生 XP 惩罚。'),
+        Text(strings.cleanupHint),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -898,12 +1273,12 @@ class _TodayCleanupActions extends StatelessWidget {
                   ? null
                   : controller.applyNoPressureCleanup,
               icon: const Icon(Icons.self_improvement_outlined),
-              label: const Text('放下未完成'),
+              label: Text(strings.letGoUnfinished),
             ),
             OutlinedButton.icon(
               onPressed: controller.undoLastBatchCleanup,
               icon: const Icon(Icons.undo_outlined),
-              label: const Text('撤销最近清理'),
+              label: Text(strings.undoLastCleanup),
             ),
           ],
         ),
@@ -928,18 +1303,18 @@ class _RecoverableSection extends StatelessWidget {
     return ExpansionTile(
       tilePadding: EdgeInsets.zero,
       title: Text(title),
-      subtitle: Text('${tasks.length} 个任务'),
+      subtitle: Text(context.s.taskCount(tasks.length)),
       children: [
         if (tasks.isEmpty)
-          const Align(alignment: Alignment.centerLeft, child: Text('暂无')),
+          Align(alignment: Alignment.centerLeft, child: Text(context.s.empty)),
         ...tasks.map(
           (task) => ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(task.title),
-            subtitle: Text(task.status.label),
+            subtitle: Text(context.s.taskStatus(task.status)),
             trailing: TextButton(
               onPressed: () => onRestore(task.id),
-              child: const Text('恢复'),
+              child: Text(context.s.restore),
             ),
           ),
         ),
@@ -956,6 +1331,7 @@ class _MonsterStatusStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final strings = context.s;
 
     return Row(
       children: [
@@ -964,37 +1340,21 @@ class _MonsterStatusStrip extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              Chip(label: Text(controller.monster.stage.label)),
-              Chip(label: Text(controller.monster.moodState.label)),
-              Chip(label: Text('完成 ${controller.completedRewardableCount}')),
+              Chip(label: Text(strings.monsterStage(controller.monster.stage))),
+              Chip(
+                label: Text(strings.monsterMood(controller.monster.moodState)),
+              ),
+              Chip(
+                label: Text(
+                  '${strings.completedPrefix} ${controller.completedRewardableCount}',
+                ),
+              ),
             ],
           ),
         ),
         Text('+${controller.todayXp} XP', style: textTheme.titleMedium),
       ],
     );
-  }
-}
-
-extension on TaskStatus {
-  String get label {
-    return switch (this) {
-      TaskStatus.active => '进行中',
-      TaskStatus.completed => '已完成',
-      TaskStatus.cancelled => '已放下',
-      TaskStatus.deleted => '已删除',
-    };
-  }
-}
-
-extension on LongTermTaskStatus {
-  String get label {
-    return switch (this) {
-      LongTermTaskStatus.active => '进行中',
-      LongTermTaskStatus.achieved => '已完成',
-      LongTermTaskStatus.cancelled => '已取消',
-      LongTermTaskStatus.deleted => '已删除',
-    };
   }
 }
 
@@ -1019,6 +1379,7 @@ class _TaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.s;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1026,7 +1387,7 @@ class _TaskTile extends StatelessWidget {
           value: task.isCompleted,
           onChanged: task.isCompleted ? null : (_) => onComplete(),
           title: Text(task.title),
-          subtitle: Text(_subtitle),
+          subtitle: Text(_subtitle(context)),
           controlAffinity: ListTileControlAffinity.leading,
           contentPadding: EdgeInsets.zero,
         ),
@@ -1036,29 +1397,31 @@ class _TaskTile extends StatelessWidget {
             spacing: 4,
             children: [
               IconButton(
-                tooltip: task.repeatRuleId == null ? '设为重复占位' : '取消重复占位',
+                tooltip: task.repeatRuleId == null
+                    ? strings.setRepeatPlaceholder
+                    : strings.cancelRepeatPlaceholder,
                 onPressed: onToggleRepeat,
                 icon: const Icon(Icons.repeat_outlined),
               ),
               IconButton(
-                tooltip: '设置提醒时间',
+                tooltip: strings.setReminderTime,
                 onPressed: () => _showReminderDialog(context),
                 icon: const Icon(Icons.notifications_outlined),
               ),
               if (task.isCompleted)
                 IconButton(
-                  tooltip: '撤销完成',
+                  tooltip: strings.undoCompletion,
                   onPressed: onUndo,
                   icon: const Icon(Icons.undo_outlined),
                 ),
               if (task.status == TaskStatus.active)
                 IconButton(
-                  tooltip: '放下任务',
+                  tooltip: strings.letGoTask,
                   onPressed: onCancel,
                   icon: const Icon(Icons.self_improvement_outlined),
                 ),
               IconButton(
-                tooltip: '删除任务',
+                tooltip: strings.deleteTask,
                 onPressed: onDelete,
                 icon: const Icon(Icons.delete_outline),
               ),
@@ -1083,16 +1446,17 @@ class _TaskTile extends StatelessWidget {
     onReminderChanged(_normalizeReminderTimeInput(result));
   }
 
-  String get _subtitle {
-    final parts = <String>[task.status.label];
+  String _subtitle(BuildContext context) {
+    final strings = context.s;
+    final parts = <String>[strings.taskStatus(task.status)];
     if (task.reminderId != null) {
-      parts.add('提醒 ${task.dueTime ?? '已设置'}');
+      parts.add(strings.reminderSubtitle(task.dueTime));
     }
     if (task.repeatRuleId != null) {
-      parts.add('重复占位');
+      parts.add(strings.repeatPlaceholderShort);
     }
     if (task.parentLongTermTaskId != null) {
-      parts.add('长期拆解');
+      parts.add(strings.longTermChild);
     }
     return parts.join(' · ');
   }
@@ -1125,22 +1489,23 @@ class _ReminderTimeDialogState extends State<_ReminderTimeDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.s;
     return AlertDialog(
-      title: const Text('设置提醒时间'),
+      title: Text(strings.setReminderTime),
       content: Form(
         key: _formKey,
         child: TextFormField(
           controller: _reminderTimeController,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: '提醒时间',
+          decoration: InputDecoration(
+            labelText: strings.reminderTime,
             hintText: '20:30',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
           keyboardType: TextInputType.datetime,
           validator: (value) {
             if (_normalizeReminderTimeInput(value ?? '') == null) {
-              return '请输入 00:00-23:59';
+              return strings.invalidReminderTime;
             }
             return null;
           },
@@ -1149,7 +1514,7 @@ class _ReminderTimeDialogState extends State<_ReminderTimeDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(''),
-          child: const Text('清除'),
+          child: Text(strings.clear),
         ),
         FilledButton(
           onPressed: () {
@@ -1157,7 +1522,7 @@ class _ReminderTimeDialogState extends State<_ReminderTimeDialog> {
               Navigator.of(context).pop(_reminderTimeController.text);
             }
           },
-          child: const Text('保存'),
+          child: Text(strings.save),
         ),
       ],
     );
@@ -1197,7 +1562,7 @@ class _MilestoneCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                milestone.title,
+                context.s.milestoneTitle(milestone),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
@@ -1219,26 +1584,27 @@ class MonsterTab extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         final monster = controller.monster;
+        final strings = context.s;
 
         return ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const ListMonsterSectionHeader(
-              title: '怪兽',
-              subtitle: '小单的成长只来自真实完成。',
+            ListMonsterSectionHeader(
+              title: strings.tabMonster,
+              subtitle: strings.monsterSubtitle,
             ),
             const SizedBox(height: 20),
             MonsterSpritePlaceholder(
-              moodLabel: monster.moodState.label,
-              actionLabel: monster.stage.label,
+              moodLabel: strings.monsterMood(monster.moodState),
+              actionLabel: strings.monsterStage(monster.stage),
             ),
             const SizedBox(height: 20),
             Text(
-              monster.stage.label,
+              strings.monsterStage(monster.stage),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            Text('等级 ${monster.level} · ${monster.moodState.label}'),
+            Text(strings.levelLine(monster)),
             const SizedBox(height: 8),
             Text('${monster.currentLevelXp} / ${monster.xpToNextLevel} XP'),
           ],
