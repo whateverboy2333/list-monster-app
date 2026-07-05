@@ -672,8 +672,7 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                     child: TextFormField(
                       controller: _stepControllers[index],
                       decoration: InputDecoration(
-                        labelText:
-                            '第 ${index + 1} 天任务（${_stepDateLabel(index)}）',
+                        labelText: '第 ${index + 1} 天任务',
                         hintText: _stepHint(index),
                         border: const OutlineInputBorder(),
                       ),
@@ -766,12 +765,6 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
       return '截止日期必须晚于开始日期';
     }
     return null;
-  }
-
-  String _stepDateLabel(int index) {
-    final startDate =
-        _parseDateInput(_startDateController.text) ?? widget.initialStartDate;
-    return _formatMonthDay(startDate.add(Duration(days: index)));
   }
 
   String _stepHint(int index) {

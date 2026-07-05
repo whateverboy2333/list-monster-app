@@ -623,14 +623,8 @@ void main() {
   });
 }
 
-Finder _longTermStepField(int day, {DateTime? startDate}) {
-  final effectiveStartDate = startDate ?? _dateOnly(DateTime.now());
-  final stepDate = effectiveStartDate.add(Duration(days: day - 1));
-  return find.widgetWithText(
-    TextFormField,
-    '第 $day 天任务（${stepDate.month}/${stepDate.day}）',
-  );
-}
+Finder _longTermStepField(int day, {DateTime? startDate}) =>
+    find.widgetWithText(TextFormField, '第 $day 天任务');
 
 DateTime _dateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);
