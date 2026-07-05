@@ -1002,9 +1002,9 @@ class LongTermTask {
 
   List<LongTermChildTaskDraft> generateChildTaskDrafts({
     String listId = 'inbox',
-    List<String>? childTaskTitles,
+    required List<String> childTaskTitles,
   }) {
-    if (childTaskTitles != null && childTaskTitles.length != totalTaskCount) {
+    if (childTaskTitles.length != totalTaskCount) {
       throw ArgumentError.value(
         childTaskTitles,
         'childTaskTitles',
@@ -1015,9 +1015,8 @@ class LongTermTask {
     return List.generate(totalTaskCount, (index) {
       final scheduledDate = startDate.add(Duration(days: index));
       final taskId = '${longTermTaskId}_day_${index + 1}';
-      final childTitle = childTaskTitles?[index].trim();
-      if (childTaskTitles != null &&
-          (childTitle == null || childTitle.isEmpty)) {
+      final childTitle = childTaskTitles[index].trim();
+      if (childTitle.isEmpty) {
         throw ArgumentError.value(
           childTaskTitles,
           'childTaskTitles',
@@ -1028,7 +1027,7 @@ class LongTermTask {
       return LongTermChildTaskDraft(
         taskId: taskId,
         draft: TaskDraft(
-          title: childTitle ?? '$title 第 ${index + 1} 天',
+          title: childTitle,
           listId: listId,
           type: TaskType.longTermChild,
           scheduledDate: scheduledDate,

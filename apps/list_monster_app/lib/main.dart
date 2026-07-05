@@ -321,7 +321,7 @@ class LongTermTab extends StatelessWidget {
           children: [
             const ListMonsterSectionHeader(
               title: '长期任务',
-              subtitle: '超过一天的目标，会自动拆成每日任务。',
+              subtitle: '超过一天的目标，先拆成每日可完成的小任务。',
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
@@ -332,7 +332,7 @@ class LongTermTab extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             if (controller.longTermTasks.isEmpty)
-              const Text('还没有长期任务。长期任务会自动生成每日拆解项。'),
+              const Text('还没有长期任务。创建时先写目标，再拆成每天的小任务。'),
             ...controller.longTermTasks.map((task) {
               final childTasks = controller.longTermChildTasks(
                 task.longTermTaskId,
@@ -467,13 +467,40 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                   },
                 ),
                 const SizedBox(height: 12),
+                Text('拆解路线', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: const [
                     ChoiceChip(label: Text('手动拆解'), selected: true),
-                    InputChip(label: Text('AI 拆解'), isEnabled: false),
+                    InputChip(label: Text('AI 拆解（后续）'), isEnabled: false),
                   ],
+                ),
+                const SizedBox(height: 12),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.account_tree_outlined),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '手动拆解会按天生成对应日期的任务；AI 拆解会在后续版本根据目标生成草案。',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ...List.generate(
@@ -483,8 +510,8 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                     child: TextFormField(
                       controller: _stepControllers[index],
                       decoration: InputDecoration(
-                        labelText: '第 ${index + 1} 天任务',
-                        hintText: '写下当天真正要完成的小任务',
+                        labelText: '第 ${index + 1} 天：${_stepLabel(index)}',
+                        hintText: _stepHint(index),
                         border: const OutlineInputBorder(),
                       ),
                       validator: (value) =>
@@ -529,6 +556,26 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
             .toList(growable: false),
       ),
     );
+  }
+
+  String _stepLabel(int index) {
+    if (index == 0) {
+      return '启动准备';
+    }
+    if (index == _dayCount - 1) {
+      return '收尾检查';
+    }
+    return '推进产出';
+  }
+
+  String _stepHint(int index) {
+    if (index == 0) {
+      return '例如：整理资料、明确范围、列出第一步';
+    }
+    if (index == _dayCount - 1) {
+      return '例如：复盘检查、完成提交、整理成果';
+    }
+    return '例如：完成一个可检查的小成果';
   }
 }
 

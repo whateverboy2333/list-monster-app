@@ -391,25 +391,25 @@ class TaskSystemController extends ChangeNotifier {
     if (normalizedTitle.isEmpty) {
       return;
     }
+    if (breakdownSource == LongTermBreakdownSource.ai) {
+      return;
+    }
     final normalizedChildTaskTitles = childTaskTitles
         ?.map((title) => title.trim())
         .toList(growable: false);
-    if (normalizedChildTaskTitles != null &&
+    if (normalizedChildTaskTitles == null ||
+        normalizedChildTaskTitles.length < 2 ||
         normalizedChildTaskTitles.any((title) => title.isEmpty)) {
       return;
     }
 
-    final inferredTaskCount = normalizedChildTaskTitles?.length ?? 3;
-    if (inferredTaskCount < 2) {
-      return;
-    }
     final resolvedDueDate =
-        dueDate ?? today.add(Duration(days: inferredTaskCount - 1));
+        dueDate ??
+        today.add(Duration(days: normalizedChildTaskTitles.length - 1));
     final resolvedTaskCount =
         _dateOnly(resolvedDueDate).difference(today).inDays + 1;
     if (resolvedTaskCount < 2 ||
-        (normalizedChildTaskTitles != null &&
-            normalizedChildTaskTitles.length != resolvedTaskCount)) {
+        normalizedChildTaskTitles.length != resolvedTaskCount) {
       return;
     }
 
@@ -423,12 +423,8 @@ class TaskSystemController extends ChangeNotifier {
     _longTermTasks.add(longTerm);
     _events.add(longTerm.toCreatedEvent(eventId: _nextEventId()));
 
-    final generatedTitles = switch (breakdownSource) {
-      LongTermBreakdownSource.manual => normalizedChildTaskTitles,
-      LongTermBreakdownSource.ai => normalizedChildTaskTitles,
-    };
     for (final generated in longTerm.generateChildTaskDrafts(
-      childTaskTitles: generatedTitles,
+      childTaskTitles: normalizedChildTaskTitles,
     )) {
       _tasks.add(
         TaskItem.create(

@@ -256,7 +256,13 @@ void main() {
         dueDate: DateTime(2026, 7, 6),
       );
 
-      final generated = longTerm.generateChildTaskDrafts();
+      final generated = longTerm.generateChildTaskDrafts(
+        childTaskTitles: const [
+          'Read chapter 1',
+          'Read chapter 2',
+          'Review notes',
+        ],
+      );
       final progressed = longTerm.recordChildCompletion(
         eventId: 'evt_progress_1',
         completedTaskCount: 3,
@@ -293,6 +299,23 @@ void main() {
     expect(generated[2].draft.title, '做模拟题');
     expect(generated[0].draft.scheduledDate, DateTime(2026, 7, 4));
     expect(generated[2].draft.scheduledDate, DateTime(2026, 7, 6));
+  });
+
+  test('rejects blank manual long-term child task titles', () {
+    final longTerm = LongTermTask.create(
+      longTermTaskId: 'long_1',
+      userId: 'local_guest',
+      title: 'Prepare exam',
+      startDate: DateTime(2026, 7, 4),
+      dueDate: DateTime(2026, 7, 6),
+    );
+
+    expect(
+      () => longTerm.generateChildTaskDrafts(
+        childTaskTitles: const ['整理资料', '', '做模拟题'],
+      ),
+      throwsArgumentError,
+    );
   });
 
   test('cancels a long-term task without marking it achieved', () {

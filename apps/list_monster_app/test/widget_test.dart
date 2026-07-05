@@ -94,7 +94,10 @@ void main() {
     () {
       final controller = TaskSystemController(today: DateTime(2026, 7, 4));
 
-      controller.createLongTermTask('读一本书');
+      controller.createLongTermTask(
+        '准备考试',
+        childTaskTitles: const ['整理资料', '完成第一章', '做模拟题'],
+      );
 
       expect(controller.longTermTasks, hasLength(1));
       expect(controller.longTermTasks.single.canCompleteDirectly, isFalse);
@@ -118,7 +121,10 @@ void main() {
   test('node 4 controller cancels unfinished long-term child tasks only', () {
     final controller = TaskSystemController(today: DateTime(2026, 7, 4));
 
-    controller.createLongTermTask('读一本书');
+    controller.createLongTermTask(
+      '准备考试',
+      childTaskTitles: const ['整理资料', '完成第一章', '做模拟题'],
+    );
     final completedChild = controller.tasks.first;
     controller.completeTask(completedChild.id);
 
@@ -138,6 +144,22 @@ void main() {
       isTrue,
     );
     expect(controller.events.whereType<LongTermCancelledEvent>(), isNotEmpty);
+  });
+
+  test('node 4 controller requires an explicit manual long-term breakdown', () {
+    final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+    controller.createLongTermTask('准备考试');
+    expect(controller.longTermTasks, isEmpty);
+    expect(controller.tasks, isEmpty);
+
+    controller.createLongTermTask(
+      '准备考试',
+      childTaskTitles: const ['整理资料', '完成第一章', '做模拟题'],
+      breakdownSource: LongTermBreakdownSource.ai,
+    );
+    expect(controller.longTermTasks, isEmpty);
+    expect(controller.tasks, isEmpty);
   });
 
   test('node 4 controller creates long-term tasks from manual breakdown', () {
@@ -305,21 +327,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('手动拆解'), findsOneWidget);
-    expect(find.text('AI 拆解'), findsOneWidget);
+    expect(find.text('AI 拆解（后续）'), findsOneWidget);
+    expect(find.textContaining('对应日期的任务'), findsOneWidget);
+    final aiChip = tester.widget<InputChip>(
+      find.widgetWithText(InputChip, 'AI 拆解（后续）'),
+    );
+    expect(aiChip.isEnabled, isFalse);
 
     await tester.enterText(find.widgetWithText(TextFormField, '长期目标'), '准备考试');
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '第 1 天任务'),
-      '整理资料',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '第 2 天任务'),
-      '完成第一章',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '第 3 天任务'),
-      '做模拟题',
-    );
+    await tester.enterText(_longTermStepField(1), '整理资料');
+    await tester.enterText(_longTermStepField(2), '完成第一章');
+    await tester.enterText(_longTermStepField(3), '做模拟题');
     await tester.tap(find.text('创建'));
     await tester.pumpAndSettle();
 
@@ -334,4 +352,69 @@ void main() {
     expect(find.text('完成第一章'), findsOneWidget);
     expect(find.text('做模拟题'), findsOneWidget);
   });
+
+  testWidgets('validates long-term task manual breakdown form', (tester) async {
+    await tester.pumpWidget(const ListMonsterApp());
+
+    await tester.tap(find.text('长期'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('创建长期任务'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('创建'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请输入长期目标'), findsOneWidget);
+    expect(find.text('请输入第 1 天任务'), findsOneWidget);
+    expect(find.text('请输入第 2 天任务'), findsOneWidget);
+    expect(find.text('请输入第 3 天任务'), findsOneWidget);
+    expect(find.widgetWithText(ExpansionTile, '准备考试'), findsNothing);
+
+    await tester.enterText(find.widgetWithText(TextFormField, '长期目标'), '准备考试');
+    await tester.enterText(_longTermStepField(1), '整理资料');
+    await tester.enterText(_longTermStepField(2), '完成第一章');
+    await tester.tap(find.text('创建'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请输入第 3 天任务'), findsOneWidget);
+    expect(find.widgetWithText(ExpansionTile, '准备考试'), findsNothing);
+  });
+
+  testWidgets('changes long-term manual breakdown day count', (tester) async {
+    await tester.pumpWidget(const ListMonsterApp());
+
+    await tester.tap(find.text('长期'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('创建长期任务'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('3 天'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('5 天').last);
+    await tester.pumpAndSettle();
+
+    expect(_longTermStepField(5, totalDays: 5), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextFormField, '长期目标'), '做作品集');
+    for (var day = 1; day <= 5; day++) {
+      await tester.enterText(
+        _longTermStepField(day, totalDays: 5),
+        '作品集第 $day 步',
+      );
+    }
+    await tester.tap(find.text('创建'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('做作品集'), findsOneWidget);
+    expect(find.textContaining('0/5 · 进行中'), findsOneWidget);
+  });
+}
+
+Finder _longTermStepField(int day, {int totalDays = 3}) {
+  final label = switch (day) {
+    1 => '启动准备',
+    _ when day == totalDays => '收尾检查',
+    _ => '推进产出',
+  };
+  return find.widgetWithText(TextFormField, '第 $day 天：$label');
 }
