@@ -181,6 +181,119 @@ void main() {
     );
   });
 
+  test('node 4 controller creates long-term tasks from custom dates', () {
+    final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+    final titles = List<String>.generate(10, (index) => '第 ${index + 1} 天计划');
+
+    controller.createLongTermTask(
+      '十天训练',
+      startDate: DateTime(2026, 7, 10),
+      dueDate: DateTime(2026, 7, 19),
+      childTaskTitles: titles,
+    );
+
+    final longTermTask = controller.longTermTasks.single;
+    final childTasks = controller.longTermChildTasks(
+      longTermTask.longTermTaskId,
+    );
+
+    expect(longTermTask.startDate, DateTime(2026, 7, 10));
+    expect(longTermTask.dueDate, DateTime(2026, 7, 19));
+    expect(longTermTask.totalTaskCount, 10);
+    expect(childTasks, hasLength(10));
+    expect(childTasks.first.scheduledDate, DateTime(2026, 7, 10));
+    expect(childTasks.last.scheduledDate, DateTime(2026, 7, 19));
+  });
+
+  test('node 4 controller edits long-term task date range', () {
+    final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+    controller.createLongTermTask(
+      '准备考试',
+      childTaskTitles: const ['整理资料', '完成第一章', '做模拟题'],
+    );
+    final longTermTaskId = controller.longTermTasks.single.longTermTaskId;
+
+    controller.updateLongTermTaskPlan(
+      longTermTaskId,
+      title: '准备期末考试',
+      startDate: DateTime(2026, 7, 4),
+      dueDate: DateTime(2026, 7, 8),
+      childTaskTitles: const ['整理资料', '完成第一章', '做模拟题', '错题整理', '复盘检查'],
+    );
+
+    final updated = controller.longTermTasks.single;
+    final childTasks = controller.longTermChildTasks(longTermTaskId);
+    expect(updated.title, '准备期末考试');
+    expect(updated.dueDate, DateTime(2026, 7, 8));
+    expect(updated.totalTaskCount, 5);
+    expect(childTasks, hasLength(5));
+    expect(childTasks.last.title, '复盘检查');
+    expect(childTasks.last.scheduledDate, DateTime(2026, 7, 8));
+  });
+
+  test(
+    'node 4 controller refuses date edits that exclude completed children',
+    () {
+      final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+      controller.createLongTermTask(
+        '准备考试',
+        childTaskTitles: const ['整理资料', '完成第一章', '做模拟题'],
+      );
+      final longTermTaskId = controller.longTermTasks.single.longTermTaskId;
+      final lastChildTask = controller.longTermChildTasks(longTermTaskId).last;
+      controller.completeTask(lastChildTask.id);
+
+      controller.updateLongTermTaskPlan(
+        longTermTaskId,
+        title: '准备考试',
+        startDate: DateTime(2026, 7, 4),
+        dueDate: DateTime(2026, 7, 5),
+        childTaskTitles: const ['整理资料', '完成第一章'],
+      );
+
+      expect(controller.longTermTasks.single.totalTaskCount, 3);
+      expect(controller.longTermTasks.single.dueDate, DateTime(2026, 7, 6));
+      expect(controller.longTermChildTasks(longTermTaskId), hasLength(3));
+    },
+  );
+
+  test(
+    'node 4 controller cancels active children outside shortened date range',
+    () {
+      final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+      controller.createLongTermTask(
+        '准备考试',
+        childTaskTitles: const ['整理资料', '完成第一章', '做模拟题'],
+      );
+      final longTermTaskId = controller.longTermTasks.single.longTermTaskId;
+
+      controller.updateLongTermTaskPlan(
+        longTermTaskId,
+        title: '准备考试',
+        startDate: DateTime(2026, 7, 4),
+        dueDate: DateTime(2026, 7, 5),
+        childTaskTitles: const ['整理资料', '完成第一章'],
+      );
+
+      expect(controller.longTermTasks.single.totalTaskCount, 2);
+      expect(
+        controller
+            .longTermChildTasks(longTermTaskId)
+            .where((task) => task.status == TaskStatus.active),
+        hasLength(2),
+      );
+      expect(
+        controller.cancelledTasks.where(
+          (task) => task.parentLongTermTaskId == longTermTaskId,
+        ),
+        hasLength(1),
+      );
+    },
+  );
+
   test('node 4 controller records reminder intent and repeat placeholder', () {
     final controller = TaskSystemController(today: DateTime(2026, 7, 4));
 
@@ -335,9 +448,13 @@ void main() {
     expect(aiChip.isEnabled, isFalse);
 
     await tester.enterText(find.widgetWithText(TextFormField, '长期目标'), '准备考试');
-    await tester.enterText(_longTermStepField(1), '整理资料');
-    await tester.enterText(_longTermStepField(2), '完成第一章');
-    await tester.enterText(_longTermStepField(3), '做模拟题');
+    final startDate = _dateOnly(DateTime.now());
+    await tester.enterText(_longTermStepField(1, startDate: startDate), '整理资料');
+    await tester.enterText(
+      _longTermStepField(2, startDate: startDate),
+      '完成第一章',
+    );
+    await tester.enterText(_longTermStepField(3, startDate: startDate), '做模拟题');
     await tester.tap(find.text('创建'));
     await tester.pumpAndSettle();
 
@@ -371,8 +488,12 @@ void main() {
     expect(find.widgetWithText(ExpansionTile, '准备考试'), findsNothing);
 
     await tester.enterText(find.widgetWithText(TextFormField, '长期目标'), '准备考试');
-    await tester.enterText(_longTermStepField(1), '整理资料');
-    await tester.enterText(_longTermStepField(2), '完成第一章');
+    final startDate = _dateOnly(DateTime.now());
+    await tester.enterText(_longTermStepField(1, startDate: startDate), '整理资料');
+    await tester.enterText(
+      _longTermStepField(2, startDate: startDate),
+      '完成第一章',
+    );
     await tester.tap(find.text('创建'));
     await tester.pumpAndSettle();
 
@@ -380,7 +501,7 @@ void main() {
     expect(find.widgetWithText(ExpansionTile, '准备考试'), findsNothing);
   });
 
-  testWidgets('changes long-term manual breakdown day count', (tester) async {
+  testWidgets('creates long-term task from custom date range', (tester) async {
     await tester.pumpWidget(const ListMonsterApp());
 
     await tester.tap(find.text('长期'));
@@ -388,17 +509,24 @@ void main() {
     await tester.tap(find.text('创建长期任务'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('3 天'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('5 天').last);
+    final startDate = DateTime(2026, 7, 10);
+    final dueDate = DateTime(2026, 7, 14);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '开始日期'),
+      _formatTestDate(startDate),
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '截止日期'),
+      _formatTestDate(dueDate),
+    );
     await tester.pumpAndSettle();
 
-    expect(_longTermStepField(5, totalDays: 5), findsOneWidget);
+    expect(_longTermStepField(5, startDate: startDate), findsOneWidget);
 
     await tester.enterText(find.widgetWithText(TextFormField, '长期目标'), '做作品集');
     for (var day = 1; day <= 5; day++) {
       await tester.enterText(
-        _longTermStepField(day, totalDays: 5),
+        _longTermStepField(day, startDate: startDate),
         '作品集第 $day 步',
       );
     }
@@ -407,14 +535,108 @@ void main() {
 
     expect(find.text('做作品集'), findsOneWidget);
     expect(find.textContaining('0/5 · 进行中'), findsOneWidget);
+    expect(find.textContaining('7/10-7/14'), findsOneWidget);
+  });
+
+  testWidgets('edits long-term task date range from the task card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ListMonsterApp());
+
+    await tester.tap(find.text('长期'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('创建长期任务'));
+    await tester.pumpAndSettle();
+
+    final startDate = _dateOnly(DateTime.now());
+    await tester.enterText(find.widgetWithText(TextFormField, '长期目标'), '准备考试');
+    await tester.enterText(_longTermStepField(1, startDate: startDate), '整理资料');
+    await tester.enterText(
+      _longTermStepField(2, startDate: startDate),
+      '完成第一章',
+    );
+    await tester.enterText(_longTermStepField(3, startDate: startDate), '做模拟题');
+    await tester.tap(find.text('创建'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ExpansionTile, '准备考试'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('编辑日期与拆解'));
+    await tester.pumpAndSettle();
+
+    final newDueDate = startDate.add(const Duration(days: 4));
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '截止日期'),
+      _formatTestDate(newDueDate),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(_longTermStepField(4, startDate: startDate), '错题整理');
+    await tester.enterText(_longTermStepField(5, startDate: startDate), '复盘检查');
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('0/5 · 进行中'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ExpansionTile, '准备考试'));
+    await tester.pumpAndSettle();
+    expect(find.text('复盘检查'), findsOneWidget);
+  });
+
+  testWidgets('confirms shortening long-term task date range', (tester) async {
+    await tester.pumpWidget(const ListMonsterApp());
+
+    await tester.tap(find.text('长期'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('创建长期任务'));
+    await tester.pumpAndSettle();
+
+    final startDate = _dateOnly(DateTime.now());
+    await tester.enterText(find.widgetWithText(TextFormField, '长期目标'), '准备考试');
+    await tester.enterText(_longTermStepField(1, startDate: startDate), '整理资料');
+    await tester.enterText(
+      _longTermStepField(2, startDate: startDate),
+      '完成第一章',
+    );
+    await tester.enterText(_longTermStepField(3, startDate: startDate), '做模拟题');
+    await tester.tap(find.text('创建'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ExpansionTile, '准备考试'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('编辑日期与拆解'));
+    await tester.pumpAndSettle();
+
+    final shortenedDueDate = startDate.add(const Duration(days: 1));
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '截止日期'),
+      _formatTestDate(shortenedDueDate),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('调整长期任务日期'), findsOneWidget);
+    expect(find.textContaining('1 个未完成拆解任务'), findsOneWidget);
+    await tester.tap(find.text('确认保存'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('0/2 · 进行中'), findsOneWidget);
   });
 }
 
-Finder _longTermStepField(int day, {int totalDays = 3}) {
-  final label = switch (day) {
-    1 => '启动准备',
-    _ when day == totalDays => '收尾检查',
-    _ => '推进产出',
-  };
-  return find.widgetWithText(TextFormField, '第 $day 天：$label');
+Finder _longTermStepField(int day, {DateTime? startDate}) {
+  final effectiveStartDate = startDate ?? _dateOnly(DateTime.now());
+  final stepDate = effectiveStartDate.add(Duration(days: day - 1));
+  return find.widgetWithText(
+    TextFormField,
+    '第 $day 天任务（${stepDate.month}/${stepDate.day}）',
+  );
+}
+
+DateTime _dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
+
+String _formatTestDate(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}-$month-$day';
 }

@@ -343,9 +343,26 @@ class LongTermTab extends StatelessWidget {
                 leading: const Icon(Icons.flag_outlined),
                 title: Text(task.title),
                 subtitle: Text(
-                  '${task.completedTaskCount}/${task.totalTaskCount} · ${task.status.label}',
+                  '${_formatDateRange(task.startDate, task.dueDate)} · '
+                  '${task.completedTaskCount}/${task.totalTaskCount} · '
+                  '${task.status.label}',
                 ),
                 children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: task.status == LongTermTaskStatus.active
+                          ? () => _showEditLongTermTaskDialog(
+                              context,
+                              controller,
+                              task,
+                              childTasks,
+                            )
+                          : null,
+                      icon: const Icon(Icons.edit_calendar_outlined),
+                      label: const Text('编辑日期与拆解'),
+                    ),
+                  ),
                   ...childTasks.map(
                     (childTask) => ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -369,29 +386,150 @@ class LongTermTab extends StatelessWidget {
   ) async {
     final plan = await showDialog<_LongTermTaskPlan>(
       context: context,
-      builder: (context) => const _LongTermTaskDialog(),
+      builder: (context) =>
+          _LongTermTaskDialog(initialStartDate: controller.today),
     );
     if (plan == null) {
+      return;
+    }
+    if (!context.mounted) {
       return;
     }
 
     controller.createLongTermTask(
       plan.title,
+      startDate: plan.startDate,
+      dueDate: plan.dueDate,
       childTaskTitles: plan.childTaskTitles,
       breakdownSource: LongTermBreakdownSource.manual,
     );
   }
+
+  Future<void> _showEditLongTermTaskDialog(
+    BuildContext context,
+    TaskSystemController controller,
+    LongTermTask task,
+    List<TaskItem> childTasks,
+  ) async {
+    final plan = await showDialog<_LongTermTaskPlan>(
+      context: context,
+      builder: (context) => _LongTermTaskDialog(
+        initialStartDate: task.startDate,
+        initialPlan: _LongTermTaskPlan(
+          title: task.title,
+          startDate: task.startDate,
+          dueDate: task.dueDate,
+          childTaskTitles: childTasks.map((child) => child.title).toList(),
+        ),
+      ),
+    );
+    if (plan == null) {
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+
+    final completedOutsideRange = childTasks
+        .where(
+          (child) =>
+              child.isCompleted &&
+              !_isDateWithinRange(
+                child.scheduledDate,
+                plan.startDate,
+                plan.dueDate,
+              ),
+        )
+        .length;
+    if (completedOutsideRange > 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('不能把已完成的拆解任务排除出长期任务日期范围。')));
+      return;
+    }
+
+    final activeOutsideRange = childTasks
+        .where(
+          (child) =>
+              child.status == TaskStatus.active &&
+              !_isDateWithinRange(
+                child.scheduledDate,
+                plan.startDate,
+                plan.dueDate,
+              ),
+        )
+        .length;
+    if (activeOutsideRange > 0) {
+      final confirmed = await _confirmLongTermDateEdit(
+        context,
+        affectedCount: activeOutsideRange,
+      );
+      if (!context.mounted) {
+        return;
+      }
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    final updated = controller.updateLongTermTaskPlan(
+      task.longTermTaskId,
+      title: plan.title,
+      startDate: plan.startDate,
+      dueDate: plan.dueDate,
+      childTaskTitles: plan.childTaskTitles,
+    );
+    if (!updated && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('长期任务日期没有保存，请检查日期和拆解项。')));
+    }
+  }
+
+  Future<bool> _confirmLongTermDateEdit(
+    BuildContext context, {
+    required int affectedCount,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('调整长期任务日期'),
+        content: Text('新的日期范围会排除 $affectedCount 个未完成拆解任务。保存后这些任务会被放下，不产生 XP。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消保存'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('确认保存'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
 }
 
 class _LongTermTaskPlan {
-  const _LongTermTaskPlan({required this.title, required this.childTaskTitles});
+  const _LongTermTaskPlan({
+    required this.title,
+    required this.startDate,
+    required this.dueDate,
+    required this.childTaskTitles,
+  });
 
   final String title;
+  final DateTime startDate;
+  final DateTime dueDate;
   final List<String> childTaskTitles;
 }
 
 class _LongTermTaskDialog extends StatefulWidget {
-  const _LongTermTaskDialog();
+  const _LongTermTaskDialog({required this.initialStartDate, this.initialPlan});
+
+  final DateTime initialStartDate;
+  final _LongTermTaskPlan? initialPlan;
 
   @override
   State<_LongTermTaskDialog> createState() => _LongTermTaskDialogState();
@@ -400,18 +538,38 @@ class _LongTermTaskDialog extends StatefulWidget {
 class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _startDateController = TextEditingController();
+  final TextEditingController _dueDateController = TextEditingController();
   final List<TextEditingController> _stepControllers = [];
   int _dayCount = 3;
 
   @override
   void initState() {
     super.initState();
+    final initialPlan = widget.initialPlan;
+    final initialStartDate = initialPlan?.startDate ?? widget.initialStartDate;
+    final initialDueDate =
+        initialPlan?.dueDate ?? initialStartDate.add(const Duration(days: 2));
+    _titleController.text = initialPlan?.title ?? '';
+    _startDateController.text = _formatDateInput(initialStartDate);
+    _dueDateController.text = _formatDateInput(initialDueDate);
+    _dayCount = _dateRangeLength(initialStartDate, initialDueDate) ?? 3;
     _syncStepControllers();
+    final childTaskTitles = initialPlan?.childTaskTitles ?? const <String>[];
+    for (
+      var index = 0;
+      index < childTaskTitles.length && index < _stepControllers.length;
+      index++
+    ) {
+      _stepControllers[index].text = childTaskTitles[index];
+    }
   }
 
   @override
   void dispose() {
     _titleController.dispose();
+    _startDateController.dispose();
+    _dueDateController.dispose();
     for (final controller in _stepControllers) {
       controller.dispose();
     }
@@ -421,7 +579,7 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('创建长期任务'),
+      title: Text(widget.initialPlan == null ? '创建长期任务' : '编辑长期任务'),
       content: SizedBox(
         width: 480,
         child: SingleChildScrollView(
@@ -442,29 +600,33 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                   validator: (value) => _hasText(value) ? null : '请输入长期目标',
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<int>(
-                  initialValue: _dayCount,
+                TextFormField(
+                  controller: _startDateController,
                   decoration: const InputDecoration(
-                    labelText: '拆解天数',
+                    labelText: '开始日期',
+                    hintText: '2026-07-05',
                     border: OutlineInputBorder(),
                   ),
-                  items: const [2, 3, 4, 5, 7]
-                      .map(
-                        (days) => DropdownMenuItem<int>(
-                          value: days,
-                          child: Text('$days 天'),
-                        ),
-                      )
-                      .toList(growable: false),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
+                  keyboardType: TextInputType.datetime,
+                  validator: (value) {
+                    if (_parseDateInput(value ?? '') == null) {
+                      return '请输入 yyyy-mm-dd';
                     }
-                    setState(() {
-                      _dayCount = value;
-                      _syncStepControllers();
-                    });
+                    return null;
                   },
+                  onChanged: (_) => _syncStepControllersFromDates(),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _dueDateController,
+                  decoration: const InputDecoration(
+                    labelText: '截止日期',
+                    hintText: '2026-07-12',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.datetime,
+                  validator: (value) => _validateDueDate(),
+                  onChanged: (_) => _syncStepControllersFromDates(),
                 ),
                 const SizedBox(height: 12),
                 Text('拆解路线', style: Theme.of(context).textTheme.titleSmall),
@@ -510,7 +672,8 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                     child: TextFormField(
                       controller: _stepControllers[index],
                       decoration: InputDecoration(
-                        labelText: '第 ${index + 1} 天：${_stepLabel(index)}',
+                        labelText:
+                            '第 ${index + 1} 天任务（${_stepDateLabel(index)}）',
                         hintText: _stepHint(index),
                         border: const OutlineInputBorder(),
                       ),
@@ -529,7 +692,10 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('取消'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('创建')),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(widget.initialPlan == null ? '创建' : '保存'),
+        ),
       ],
     );
   }
@@ -543,14 +709,33 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
     }
   }
 
+  void _syncStepControllersFromDates() {
+    final startDate = _parseDateInput(_startDateController.text);
+    final dueDate = _parseDateInput(_dueDateController.text);
+    final nextDayCount = startDate == null || dueDate == null
+        ? null
+        : _dateRangeLength(startDate, dueDate);
+    if (nextDayCount == null) {
+      return;
+    }
+    setState(() {
+      _dayCount = nextDayCount;
+      _syncStepControllers();
+    });
+  }
+
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
+    final startDate = _parseDateInput(_startDateController.text)!;
+    final dueDate = _parseDateInput(_dueDateController.text)!;
 
     Navigator.of(context).pop(
       _LongTermTaskPlan(
         title: _titleController.text.trim(),
+        startDate: startDate,
+        dueDate: dueDate,
         childTaskTitles: _stepControllers
             .map((controller) => controller.text.trim())
             .toList(growable: false),
@@ -568,20 +753,81 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
     return '推进产出';
   }
 
+  String? _validateDueDate() {
+    final startDate = _parseDateInput(_startDateController.text);
+    final dueDate = _parseDateInput(_dueDateController.text);
+    if (dueDate == null) {
+      return '请输入 yyyy-mm-dd';
+    }
+    if (startDate == null) {
+      return null;
+    }
+    if (!dueDate.isAfter(startDate)) {
+      return '截止日期必须晚于开始日期';
+    }
+    return null;
+  }
+
+  String _stepDateLabel(int index) {
+    final startDate =
+        _parseDateInput(_startDateController.text) ?? widget.initialStartDate;
+    return _formatMonthDay(startDate.add(Duration(days: index)));
+  }
+
   String _stepHint(int index) {
     if (index == 0) {
-      return '例如：整理资料、明确范围、列出第一步';
+      return '${_stepLabel(index)}：整理资料、明确范围、列出第一步';
     }
     if (index == _dayCount - 1) {
-      return '例如：复盘检查、完成提交、整理成果';
+      return '${_stepLabel(index)}：复盘检查、完成提交、整理成果';
     }
-    return '例如：完成一个可检查的小成果';
+    return '${_stepLabel(index)}：完成一个可检查的小成果';
   }
 }
 
 bool _hasText(String? value) => value != null && value.trim().isNotEmpty;
 
 String _formatMonthDay(DateTime value) => '${value.month}/${value.day}';
+
+String _formatDateRange(DateTime startDate, DateTime dueDate) {
+  return '${_formatMonthDay(startDate)}-${_formatMonthDay(dueDate)}';
+}
+
+String _formatDateInput(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}-$month-$day';
+}
+
+DateTime? _parseDateInput(String value) {
+  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(value.trim());
+  if (match == null) {
+    return null;
+  }
+
+  final year = int.parse(match.group(1)!);
+  final month = int.parse(match.group(2)!);
+  final day = int.parse(match.group(3)!);
+  final parsed = DateTime(year, month, day);
+  if (parsed.year != year || parsed.month != month || parsed.day != day) {
+    return null;
+  }
+  return parsed;
+}
+
+int? _dateRangeLength(DateTime startDate, DateTime dueDate) {
+  if (!dueDate.isAfter(startDate)) {
+    return null;
+  }
+  return dueDate.difference(startDate).inDays + 1;
+}
+
+bool _isDateWithinRange(DateTime value, DateTime startDate, DateTime dueDate) {
+  final date = DateTime(value.year, value.month, value.day);
+  final start = DateTime(startDate.year, startDate.month, startDate.day);
+  final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
+  return !date.isBefore(start) && !date.isAfter(due);
+}
 
 class _TodayCleanupActions extends StatelessWidget {
   const _TodayCleanupActions({required this.controller});

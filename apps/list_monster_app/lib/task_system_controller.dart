@@ -383,6 +383,7 @@ class TaskSystemController extends ChangeNotifier {
 
   void createLongTermTask(
     String title, {
+    DateTime? startDate,
     DateTime? dueDate,
     List<String>? childTaskTitles,
     LongTermBreakdownSource breakdownSource = LongTermBreakdownSource.manual,
@@ -403,11 +404,14 @@ class TaskSystemController extends ChangeNotifier {
       return;
     }
 
+    final resolvedStartDate = _dateOnly(startDate ?? today);
     final resolvedDueDate =
         dueDate ??
-        today.add(Duration(days: normalizedChildTaskTitles.length - 1));
+        resolvedStartDate.add(
+          Duration(days: normalizedChildTaskTitles.length - 1),
+        );
     final resolvedTaskCount =
-        _dateOnly(resolvedDueDate).difference(today).inDays + 1;
+        _dateOnly(resolvedDueDate).difference(resolvedStartDate).inDays + 1;
     if (resolvedTaskCount < 2 ||
         normalizedChildTaskTitles.length != resolvedTaskCount) {
       return;
@@ -417,7 +421,7 @@ class TaskSystemController extends ChangeNotifier {
       longTermTaskId: 'long_${_nextLongTermNumber++}',
       userId: userId,
       title: normalizedTitle,
-      startDate: today,
+      startDate: resolvedStartDate,
       dueDate: resolvedDueDate,
     );
     _longTermTasks.add(longTerm);
@@ -438,6 +442,140 @@ class TaskSystemController extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  bool updateLongTermTaskPlan(
+    String longTermTaskId, {
+    required String title,
+    required DateTime startDate,
+    required DateTime dueDate,
+    required List<String> childTaskTitles,
+  }) {
+    final longTermIndex = _longTermTasks.indexWhere(
+      (task) => task.longTermTaskId == longTermTaskId,
+    );
+    if (longTermIndex == -1 ||
+        _longTermTasks[longTermIndex].status != LongTermTaskStatus.active) {
+      return false;
+    }
+
+    final normalizedTitle = title.trim();
+    final normalizedChildTaskTitles = childTaskTitles
+        .map((title) => title.trim())
+        .toList(growable: false);
+    if (normalizedTitle.isEmpty ||
+        normalizedChildTaskTitles.length < 2 ||
+        normalizedChildTaskTitles.any((title) => title.isEmpty)) {
+      return false;
+    }
+
+    final resolvedStartDate = _dateOnly(startDate);
+    final resolvedDueDate = _dateOnly(dueDate);
+    final resolvedTaskCount =
+        resolvedDueDate.difference(resolvedStartDate).inDays + 1;
+    if (resolvedTaskCount < 2 ||
+        normalizedChildTaskTitles.length != resolvedTaskCount) {
+      return false;
+    }
+
+    final newDates = List<DateTime>.generate(
+      resolvedTaskCount,
+      (index) => resolvedStartDate.add(Duration(days: index)),
+      growable: false,
+    );
+    final childIndexes = <int>[
+      for (var index = 0; index < _tasks.length; index++)
+        if (_tasks[index].parentLongTermTaskId == longTermTaskId) index,
+    ];
+    final completedOutsideRange = childIndexes.any(
+      (index) =>
+          _tasks[index].isCompleted &&
+          !newDates.any(
+            (date) => _isSameDate(date, _tasks[index].scheduledDate),
+          ),
+    );
+    if (completedOutsideRange) {
+      return false;
+    }
+
+    for (final index in childIndexes) {
+      final task = _tasks[index];
+      final stillInRange = newDates.any(
+        (date) => _isSameDate(date, task.scheduledDate),
+      );
+      if (!stillInRange && task.status == TaskStatus.active) {
+        final result = task.cancel(
+          eventId: _nextEventId(),
+          cancelledAt: DateTime.now(),
+          cancelReason: 'longterm_date_changed',
+        );
+        _tasks[index] = result.task;
+        _events.add(result.event);
+      }
+    }
+
+    for (var index = 0; index < newDates.length; index++) {
+      final scheduledDate = newDates[index];
+      final taskTitle = normalizedChildTaskTitles[index];
+      final existingIndex = _tasks.indexWhere(
+        (task) =>
+            task.parentLongTermTaskId == longTermTaskId &&
+            task.status != TaskStatus.cancelled &&
+            task.status != TaskStatus.deleted &&
+            _isSameDate(task.scheduledDate, scheduledDate),
+      );
+      if (existingIndex == -1) {
+        final taskId = _uniqueLongTermChildTaskId(
+          longTermTaskId,
+          scheduledDate,
+        );
+        final draft = TaskDraft(
+          title: taskTitle,
+          listId: 'inbox',
+          type: TaskType.longTermChild,
+          scheduledDate: scheduledDate,
+          dateSource: TaskDateSource.longtermGenerated,
+          parentLongTermTaskId: longTermTaskId,
+          rewardEligible: true,
+        );
+        _tasks.add(
+          TaskItem.create(
+            id: taskId,
+            userId: userId,
+            draft: draft,
+            today: today,
+          ),
+        );
+        _events.add(
+          LongTermChildTaskGeneratedEvent(
+            eventId: _nextEventId(),
+            longTermTaskId: longTermTaskId,
+            taskId: taskId,
+            scheduledDate: scheduledDate,
+            rewardEligible: true,
+          ),
+        );
+      } else {
+        _tasks[existingIndex] = _tasks[existingIndex].copyWith(
+          title: taskTitle,
+          scheduledDate: scheduledDate,
+          dateSource: TaskDateSource.longtermGenerated,
+        );
+      }
+    }
+
+    _longTermTasks[longTermIndex] = _longTermTasks[longTermIndex].copyWith(
+      title: normalizedTitle,
+      startDate: resolvedStartDate,
+      dueDate: resolvedDueDate,
+      completedTaskCount: 0,
+      progress: 0,
+      status: LongTermTaskStatus.active,
+    );
+    _refreshLongTermProgress(longTermTaskId);
+
+    notifyListeners();
+    return true;
   }
 
   void cancelLongTermTask(String longTermTaskId) {
@@ -470,6 +608,18 @@ class TaskSystemController extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  String _uniqueLongTermChildTaskId(
+    String longTermTaskId,
+    DateTime scheduledDate,
+  ) {
+    final baseTaskId =
+        '${longTermTaskId}_day_${_formatDateForId(scheduledDate)}';
+    if (!_tasks.any((task) => task.id == baseTaskId)) {
+      return baseTaskId;
+    }
+    return '${baseTaskId}_${_nextTaskNumber++}';
   }
 
   void _grantTaskCompletionXp(TaskCompletedEvent event) {
@@ -603,4 +753,10 @@ bool _isSameDate(DateTime left, DateTime right) {
   return left.year == right.year &&
       left.month == right.month &&
       left.day == right.day;
+}
+
+String _formatDateForId(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}$month$day';
 }

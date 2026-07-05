@@ -301,6 +301,27 @@ void main() {
     expect(generated[2].draft.scheduledDate, DateTime(2026, 7, 6));
   });
 
+  test('updates long-term task date range through copyWith', () {
+    final longTerm = LongTermTask.create(
+      longTermTaskId: 'long_1',
+      userId: 'local_guest',
+      title: 'Prepare exam',
+      startDate: DateTime(2026, 7, 4),
+      dueDate: DateTime(2026, 7, 6),
+    );
+
+    final updated = longTerm.copyWith(
+      title: 'Prepare final exam',
+      dueDate: DateTime(2026, 7, 10),
+      completedTaskCount: 2,
+    );
+
+    expect(updated.title, 'Prepare final exam');
+    expect(updated.totalTaskCount, 7);
+    expect(updated.completedTaskCount, 2);
+    expect(updated.progress, closeTo(2 / 7, 0.001));
+  });
+
   test('rejects blank manual long-term child task titles', () {
     final longTerm = LongTermTask.create(
       longTermTaskId: 'long_1',

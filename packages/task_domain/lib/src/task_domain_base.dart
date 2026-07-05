@@ -462,6 +462,7 @@ class TaskItem {
   }
 
   TaskItem copyWith({
+    String? title,
     TaskStatus? status,
     String? listId,
     TaskPriority? priority,
@@ -488,7 +489,7 @@ class TaskItem {
     return TaskItem(
       id: id,
       userId: userId,
-      title: title,
+      title: title?.trim().isNotEmpty == true ? title!.trim() : this.title,
       listId: listId ?? this.listId,
       type: type,
       status: status ?? this.status,
@@ -1117,22 +1118,47 @@ class LongTermTask {
   }
 
   LongTermTask copyWith({
+    String? title,
+    DateTime? startDate,
+    DateTime? dueDate,
     LongTermTaskStatus? status,
     int? completedTaskCount,
     double? progress,
     DateTime? achievedAt,
     DateTime? cancelledAt,
   }) {
+    final nextStartDate = _dateOnly(startDate ?? this.startDate);
+    final nextDueDate = _dateOnly(dueDate ?? this.dueDate);
+    if (!nextDueDate.isAfter(nextStartDate)) {
+      throw ArgumentError.value(
+        nextDueDate,
+        'dueDate',
+        'Long-term tasks must span more than one day.',
+      );
+    }
+
+    final nextTotalTaskCount = nextDueDate.difference(nextStartDate).inDays + 1;
+    final nextCompletedTaskCount =
+        completedTaskCount ?? this.completedTaskCount;
+    if (nextCompletedTaskCount < 0 ||
+        nextCompletedTaskCount > nextTotalTaskCount) {
+      throw ArgumentError.value(
+        nextCompletedTaskCount,
+        'completedTaskCount',
+        'Completed count must be within total task count.',
+      );
+    }
+
     return LongTermTask(
       longTermTaskId: longTermTaskId,
       userId: userId,
-      title: title,
-      startDate: startDate,
-      dueDate: dueDate,
+      title: title?.trim().isNotEmpty == true ? title!.trim() : this.title,
+      startDate: nextStartDate,
+      dueDate: nextDueDate,
       status: status ?? this.status,
-      totalTaskCount: totalTaskCount,
-      completedTaskCount: completedTaskCount ?? this.completedTaskCount,
-      progress: progress ?? this.progress,
+      totalTaskCount: nextTotalTaskCount,
+      completedTaskCount: nextCompletedTaskCount,
+      progress: progress ?? nextCompletedTaskCount / nextTotalTaskCount,
       achievedAt: achievedAt ?? this.achievedAt,
       cancelledAt: cancelledAt ?? this.cancelledAt,
     );
