@@ -525,6 +525,39 @@ class _LongTermTaskPlan {
   final List<String> childTaskTitles;
 }
 
+class _DatePickerField extends StatelessWidget {
+  const _DatePickerField({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label;
+  final DateTime value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '选择$label',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(4),
+        onTap: onTap,
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+            suffixIcon: const Icon(Icons.calendar_month_outlined),
+          ),
+          child: Text(_formatDateInput(value)),
+        ),
+      ),
+    );
+  }
+}
+
 class _LongTermTaskDialog extends StatefulWidget {
   const _LongTermTaskDialog({required this.initialStartDate, this.initialPlan});
 
@@ -538,9 +571,9 @@ class _LongTermTaskDialog extends StatefulWidget {
 class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _startDateController = TextEditingController();
-  final TextEditingController _dueDateController = TextEditingController();
   final List<TextEditingController> _stepControllers = [];
+  late DateTime _startDate;
+  late DateTime _dueDate;
   int _dayCount = 3;
 
   @override
@@ -551,9 +584,9 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
     final initialDueDate =
         initialPlan?.dueDate ?? initialStartDate.add(const Duration(days: 2));
     _titleController.text = initialPlan?.title ?? '';
-    _startDateController.text = _formatDateInput(initialStartDate);
-    _dueDateController.text = _formatDateInput(initialDueDate);
-    _dayCount = _dateRangeLength(initialStartDate, initialDueDate) ?? 3;
+    _startDate = _dateOnly(initialStartDate);
+    _dueDate = _dateOnly(initialDueDate);
+    _dayCount = _dateRangeLength(_startDate, _dueDate) ?? 3;
     _syncStepControllers();
     final childTaskTitles = initialPlan?.childTaskTitles ?? const <String>[];
     for (
@@ -568,8 +601,6 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
   @override
   void dispose() {
     _titleController.dispose();
-    _startDateController.dispose();
-    _dueDateController.dispose();
     for (final controller in _stepControllers) {
       controller.dispose();
     }
@@ -600,33 +631,33 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
                   validator: (value) => _hasText(value) ? null : '请输入长期目标',
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _startDateController,
-                  decoration: const InputDecoration(
-                    labelText: '开始日期',
-                    hintText: '2026-07-05',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.datetime,
-                  validator: (value) {
-                    if (_parseDateInput(value ?? '') == null) {
-                      return '请输入 yyyy-mm-dd';
-                    }
-                    return null;
-                  },
-                  onChanged: (_) => _syncStepControllersFromDates(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DatePickerField(
+                        key: const ValueKey('long-term-start-date-picker'),
+                        label: '开始日期',
+                        value: _startDate,
+                        onTap: _pickStartDate,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _DatePickerField(
+                        key: const ValueKey('long-term-due-date-picker'),
+                        label: '截止日期',
+                        value: _dueDate,
+                        onTap: _pickDueDate,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _dueDateController,
-                  decoration: const InputDecoration(
-                    labelText: '截止日期',
-                    hintText: '2026-07-12',
-                    border: OutlineInputBorder(),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    '当前会生成 $_dayCount 个每日拆解任务',
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  keyboardType: TextInputType.datetime,
-                  validator: (value) => _validateDueDate(),
-                  onChanged: (_) => _syncStepControllersFromDates(),
                 ),
                 const SizedBox(height: 12),
                 Text('拆解路线', style: Theme.of(context).textTheme.titleSmall),
@@ -708,33 +739,83 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
     }
   }
 
-  void _syncStepControllersFromDates() {
-    final startDate = _parseDateInput(_startDateController.text);
-    final dueDate = _parseDateInput(_dueDateController.text);
-    final nextDayCount = startDate == null || dueDate == null
-        ? null
-        : _dateRangeLength(startDate, dueDate);
+  void _applyDateRange(DateTime startDate, DateTime dueDate) {
+    final nextStartDate = _dateOnly(startDate);
+    final nextDueDate = _dateOnly(dueDate);
+    final nextDayCount = _dateRangeLength(nextStartDate, nextDueDate);
     if (nextDayCount == null) {
       return;
     }
     setState(() {
+      _startDate = nextStartDate;
+      _dueDate = nextDueDate;
       _dayCount = nextDayCount;
       _syncStepControllers();
     });
+  }
+
+  Future<void> _pickStartDate() async {
+    final selectedDate = await _showLongTermDatePicker(
+      helpText: '选择开始日期',
+      initialDate: _startDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (selectedDate == null || !mounted) {
+      return;
+    }
+
+    final nextStartDate = _dateOnly(selectedDate);
+    var nextDueDate = _dueDate;
+    if (!nextDueDate.isAfter(nextStartDate)) {
+      final preservedDays = _dayCount > 1 ? _dayCount - 1 : 1;
+      nextDueDate = nextStartDate.add(Duration(days: preservedDays));
+    }
+    _applyDateRange(nextStartDate, nextDueDate);
+  }
+
+  Future<void> _pickDueDate() async {
+    final firstDueDate = _startDate.add(const Duration(days: 1));
+    final selectedDate = await _showLongTermDatePicker(
+      helpText: '选择截止日期',
+      initialDate: _dueDate.isBefore(firstDueDate) ? firstDueDate : _dueDate,
+      firstDate: firstDueDate,
+      lastDate: DateTime(2100),
+    );
+    if (selectedDate == null || !mounted) {
+      return;
+    }
+
+    _applyDateRange(_startDate, selectedDate);
+  }
+
+  Future<DateTime?> _showLongTermDatePicker({
+    required String helpText,
+    required DateTime initialDate,
+    required DateTime firstDate,
+    required DateTime lastDate,
+  }) {
+    return showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: helpText,
+      cancelText: '取消',
+      confirmText: '确定',
+    );
   }
 
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    final startDate = _parseDateInput(_startDateController.text)!;
-    final dueDate = _parseDateInput(_dueDateController.text)!;
 
     Navigator.of(context).pop(
       _LongTermTaskPlan(
         title: _titleController.text.trim(),
-        startDate: startDate,
-        dueDate: dueDate,
+        startDate: _startDate,
+        dueDate: _dueDate,
         childTaskTitles: _stepControllers
             .map((controller) => controller.text.trim())
             .toList(growable: false),
@@ -750,21 +831,6 @@ class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
       return '收尾检查';
     }
     return '推进产出';
-  }
-
-  String? _validateDueDate() {
-    final startDate = _parseDateInput(_startDateController.text);
-    final dueDate = _parseDateInput(_dueDateController.text);
-    if (dueDate == null) {
-      return '请输入 yyyy-mm-dd';
-    }
-    if (startDate == null) {
-      return null;
-    }
-    if (!dueDate.isAfter(startDate)) {
-      return '截止日期必须晚于开始日期';
-    }
-    return null;
   }
 
   String _stepHint(int index) {
@@ -792,21 +858,8 @@ String _formatDateInput(DateTime value) {
   return '${value.year}-$month-$day';
 }
 
-DateTime? _parseDateInput(String value) {
-  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(value.trim());
-  if (match == null) {
-    return null;
-  }
-
-  final year = int.parse(match.group(1)!);
-  final month = int.parse(match.group(2)!);
-  final day = int.parse(match.group(3)!);
-  final parsed = DateTime(year, month, day);
-  if (parsed.year != year || parsed.month != month || parsed.day != day) {
-    return null;
-  }
-  return parsed;
-}
+DateTime _dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
 
 int? _dateRangeLength(DateTime startDate, DateTime dueDate) {
   if (!dueDate.isAfter(startDate)) {

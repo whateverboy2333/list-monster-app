@@ -442,6 +442,16 @@ void main() {
     expect(find.text('手动拆解'), findsOneWidget);
     expect(find.text('AI 拆解（后续）'), findsOneWidget);
     expect(find.textContaining('对应日期的任务'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, '开始日期'), findsNothing);
+    expect(find.widgetWithText(TextFormField, '截止日期'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('long-term-start-date-picker')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('long-term-due-date-picker')),
+      findsOneWidget,
+    );
     final aiChip = tester.widget<InputChip>(
       find.widgetWithText(InputChip, 'AI 拆解（后续）'),
     );
@@ -511,15 +521,16 @@ void main() {
 
     final startDate = DateTime(2026, 7, 10);
     final dueDate = DateTime(2026, 7, 14);
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '开始日期'),
-      _formatTestDate(startDate),
+    await _selectLongTermDate(
+      tester,
+      const ValueKey('long-term-start-date-picker'),
+      startDate,
     );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '截止日期'),
-      _formatTestDate(dueDate),
+    await _selectLongTermDate(
+      tester,
+      const ValueKey('long-term-due-date-picker'),
+      dueDate,
     );
-    await tester.pumpAndSettle();
 
     expect(_longTermStepField(5, startDate: startDate), findsOneWidget);
 
@@ -565,11 +576,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final newDueDate = startDate.add(const Duration(days: 4));
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '截止日期'),
-      _formatTestDate(newDueDate),
+    await _selectLongTermDate(
+      tester,
+      const ValueKey('long-term-due-date-picker'),
+      newDueDate,
     );
-    await tester.pumpAndSettle();
     await tester.enterText(_longTermStepField(4, startDate: startDate), '错题整理');
     await tester.enterText(_longTermStepField(5, startDate: startDate), '复盘检查');
     await tester.tap(find.text('保存'));
@@ -606,11 +617,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final shortenedDueDate = startDate.add(const Duration(days: 1));
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '截止日期'),
-      _formatTestDate(shortenedDueDate),
+    await _selectLongTermDate(
+      tester,
+      const ValueKey('long-term-due-date-picker'),
+      shortenedDueDate,
     );
-    await tester.pumpAndSettle();
     await tester.tap(find.text('保存'));
     await tester.pumpAndSettle();
 
@@ -626,11 +637,20 @@ void main() {
 Finder _longTermStepField(int day, {DateTime? startDate}) =>
     find.widgetWithText(TextFormField, '第 $day 天任务');
 
+Future<void> _selectLongTermDate(
+  WidgetTester tester,
+  ValueKey<String> fieldKey,
+  DateTime date,
+) async {
+  await tester.tap(find.byKey(fieldKey));
+  await tester.pumpAndSettle();
+  expect(find.textContaining('选择'), findsWidgets);
+
+  await tester.tap(find.text(date.day.toString()).last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('确定'));
+  await tester.pumpAndSettle();
+}
+
 DateTime _dateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);
-
-String _formatTestDate(DateTime value) {
-  final month = value.month.toString().padLeft(2, '0');
-  final day = value.day.toString().padLeft(2, '0');
-  return '${value.year}-$month-$day';
-}
