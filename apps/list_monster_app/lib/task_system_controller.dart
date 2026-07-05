@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:monster_domain/monster_domain.dart';
 import 'package:task_domain/task_domain.dart';
 
+enum LongTermBreakdownSource { manual, ai }
+
 class TaskSystemController extends ChangeNotifier {
   TaskSystemController({
     DateTime? today,
@@ -83,6 +85,14 @@ class TaskSystemController extends ChangeNotifier {
 
   List<TaskList> get taskLists => List.unmodifiable(_taskLists);
   List<LongTermTask> get longTermTasks => List.unmodifiable(_longTermTasks);
+  List<TaskItem> longTermChildTasks(String longTermTaskId) {
+    final childTasks = _tasks
+        .where((task) => task.parentLongTermTaskId == longTermTaskId)
+        .toList();
+    childTasks.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+    return List.unmodifiable(childTasks);
+  }
+
   List<ReminderIntent> get reminderIntents =>
       List.unmodifiable(_reminderIntents);
   List<XpLedgerEntry> get xpLedger => List.unmodifiable(_xpLedger);
@@ -371,18 +381,55 @@ class TaskSystemController extends ChangeNotifier {
     _lastBatchCleanupTaskIds = const [];
   }
 
-  void createLongTermTask(String title, {DateTime? dueDate}) {
+  void createLongTermTask(
+    String title, {
+    DateTime? dueDate,
+    List<String>? childTaskTitles,
+    LongTermBreakdownSource breakdownSource = LongTermBreakdownSource.manual,
+  }) {
+    final normalizedTitle = title.trim();
+    if (normalizedTitle.isEmpty) {
+      return;
+    }
+    final normalizedChildTaskTitles = childTaskTitles
+        ?.map((title) => title.trim())
+        .toList(growable: false);
+    if (normalizedChildTaskTitles != null &&
+        normalizedChildTaskTitles.any((title) => title.isEmpty)) {
+      return;
+    }
+
+    final inferredTaskCount = normalizedChildTaskTitles?.length ?? 3;
+    if (inferredTaskCount < 2) {
+      return;
+    }
+    final resolvedDueDate =
+        dueDate ?? today.add(Duration(days: inferredTaskCount - 1));
+    final resolvedTaskCount =
+        _dateOnly(resolvedDueDate).difference(today).inDays + 1;
+    if (resolvedTaskCount < 2 ||
+        (normalizedChildTaskTitles != null &&
+            normalizedChildTaskTitles.length != resolvedTaskCount)) {
+      return;
+    }
+
     final longTerm = LongTermTask.create(
       longTermTaskId: 'long_${_nextLongTermNumber++}',
       userId: userId,
-      title: title,
+      title: normalizedTitle,
       startDate: today,
-      dueDate: dueDate ?? today.add(const Duration(days: 2)),
+      dueDate: resolvedDueDate,
     );
     _longTermTasks.add(longTerm);
     _events.add(longTerm.toCreatedEvent(eventId: _nextEventId()));
 
-    for (final generated in longTerm.generateChildTaskDrafts()) {
+    final generatedTitles = switch (breakdownSource) {
+      LongTermBreakdownSource.manual => normalizedChildTaskTitles,
+      LongTermBreakdownSource.ai => normalizedChildTaskTitles,
+    };
+    for (final generated in longTerm.generateChildTaskDrafts(
+      childTaskTitles: generatedTitles,
+    )) {
       _tasks.add(
         TaskItem.create(
           id: generated.taskId,

@@ -325,29 +325,216 @@ class LongTermTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () => controller.createLongTermTask('读一本书'),
+              onPressed: () =>
+                  _showCreateLongTermTaskDialog(context, controller),
               icon: const Icon(Icons.add_task_outlined),
-              label: const Text('创建 3 天长期任务'),
+              label: const Text('创建长期任务'),
             ),
             const SizedBox(height: 20),
             if (controller.longTermTasks.isEmpty)
               const Text('还没有长期任务。长期任务会自动生成每日拆解项。'),
-            ...controller.longTermTasks.map(
-              (task) => ListTile(
-                contentPadding: EdgeInsets.zero,
+            ...controller.longTermTasks.map((task) {
+              final childTasks = controller.longTermChildTasks(
+                task.longTermTaskId,
+              );
+
+              return ExpansionTile(
+                tilePadding: EdgeInsets.zero,
                 leading: const Icon(Icons.flag_outlined),
                 title: Text(task.title),
                 subtitle: Text(
                   '${task.completedTaskCount}/${task.totalTaskCount} · ${task.status.label}',
                 ),
-              ),
-            ),
+                children: [
+                  ...childTasks.map(
+                    (childTask) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Text(_formatMonthDay(childTask.scheduledDate)),
+                      title: Text(childTask.title),
+                      subtitle: Text(childTask.status.label),
+                    ),
+                  ),
+                ],
+              );
+            }),
           ],
         );
       },
     );
   }
+
+  Future<void> _showCreateLongTermTaskDialog(
+    BuildContext context,
+    TaskSystemController controller,
+  ) async {
+    final plan = await showDialog<_LongTermTaskPlan>(
+      context: context,
+      builder: (context) => const _LongTermTaskDialog(),
+    );
+    if (plan == null) {
+      return;
+    }
+
+    controller.createLongTermTask(
+      plan.title,
+      childTaskTitles: plan.childTaskTitles,
+      breakdownSource: LongTermBreakdownSource.manual,
+    );
+  }
 }
+
+class _LongTermTaskPlan {
+  const _LongTermTaskPlan({required this.title, required this.childTaskTitles});
+
+  final String title;
+  final List<String> childTaskTitles;
+}
+
+class _LongTermTaskDialog extends StatefulWidget {
+  const _LongTermTaskDialog();
+
+  @override
+  State<_LongTermTaskDialog> createState() => _LongTermTaskDialogState();
+}
+
+class _LongTermTaskDialogState extends State<_LongTermTaskDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _titleController = TextEditingController();
+  final List<TextEditingController> _stepControllers = [];
+  int _dayCount = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncStepControllers();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    for (final controller in _stepControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('创建长期任务'),
+      content: SizedBox(
+        width: 480,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: '长期目标',
+                    hintText: '例如：准备考试',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) => _hasText(value) ? null : '请输入长期目标',
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  initialValue: _dayCount,
+                  decoration: const InputDecoration(
+                    labelText: '拆解天数',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [2, 3, 4, 5, 7]
+                      .map(
+                        (days) => DropdownMenuItem<int>(
+                          value: days,
+                          child: Text('$days 天'),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _dayCount = value;
+                      _syncStepControllers();
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: const [
+                    ChoiceChip(label: Text('手动拆解'), selected: true),
+                    InputChip(label: Text('AI 拆解'), isEnabled: false),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...List.generate(
+                  _stepControllers.length,
+                  (index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: TextFormField(
+                      controller: _stepControllers[index],
+                      decoration: InputDecoration(
+                        labelText: '第 ${index + 1} 天任务',
+                        hintText: '写下当天真正要完成的小任务',
+                        border: const OutlineInputBorder(),
+                      ),
+                      validator: (value) =>
+                          _hasText(value) ? null : '请输入第 ${index + 1} 天任务',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('取消'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('创建')),
+      ],
+    );
+  }
+
+  void _syncStepControllers() {
+    while (_stepControllers.length < _dayCount) {
+      _stepControllers.add(TextEditingController());
+    }
+    while (_stepControllers.length > _dayCount) {
+      _stepControllers.removeLast().dispose();
+    }
+  }
+
+  void _submit() {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _LongTermTaskPlan(
+        title: _titleController.text.trim(),
+        childTaskTitles: _stepControllers
+            .map((controller) => controller.text.trim())
+            .toList(growable: false),
+      ),
+    );
+  }
+}
+
+bool _hasText(String? value) => value != null && value.trim().isNotEmpty;
+
+String _formatMonthDay(DateTime value) => '${value.month}/${value.day}';
 
 class _TodayCleanupActions extends StatelessWidget {
   const _TodayCleanupActions({required this.controller});

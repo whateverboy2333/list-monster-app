@@ -140,6 +140,25 @@ void main() {
     expect(controller.events.whereType<LongTermCancelledEvent>(), isNotEmpty);
   });
 
+  test('node 4 controller creates long-term tasks from manual breakdown', () {
+    final controller = TaskSystemController(today: DateTime(2026, 7, 4));
+
+    controller.createLongTermTask(
+      '准备考试',
+      childTaskTitles: const ['整理资料', '完成第一章', '做模拟题'],
+      breakdownSource: LongTermBreakdownSource.manual,
+    );
+
+    expect(controller.longTermTasks.single.title, '准备考试');
+    expect(controller.longTermTasks.single.totalTaskCount, 3);
+    expect(
+      controller
+          .longTermChildTasks(controller.longTermTasks.single.longTermTaskId)
+          .map((task) => task.title),
+      ['整理资料', '完成第一章', '做模拟题'],
+    );
+  });
+
   test('node 4 controller records reminder intent and repeat placeholder', () {
     final controller = TaskSystemController(today: DateTime(2026, 7, 4));
 
@@ -282,10 +301,37 @@ void main() {
     expect(find.text('收集箱'), findsNothing);
     expect(find.text('生活'), findsNothing);
 
-    await tester.tap(find.text('创建 3 天长期任务'));
-    await tester.pump();
+    await tester.tap(find.text('创建长期任务'));
+    await tester.pumpAndSettle();
 
-    expect(find.text('读一本书'), findsOneWidget);
+    expect(find.text('手动拆解'), findsOneWidget);
+    expect(find.text('AI 拆解'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextFormField, '长期目标'), '准备考试');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '第 1 天任务'),
+      '整理资料',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '第 2 天任务'),
+      '完成第一章',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '第 3 天任务'),
+      '做模拟题',
+    );
+    await tester.tap(find.text('创建'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('准备考试'), findsOneWidget);
+    expect(find.text('读一本书'), findsNothing);
     expect(find.textContaining('0/3 · 进行中'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ExpansionTile, '准备考试'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('整理资料'), findsOneWidget);
+    expect(find.text('完成第一章'), findsOneWidget);
+    expect(find.text('做模拟题'), findsOneWidget);
   });
 }
