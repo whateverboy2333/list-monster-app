@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   companion_contract:
     path: ../../packages/companion_contract
@@ -48,7 +50,6 @@ dependencies:
     path: ../../packages/task_domain
   ui_kit:
     path: ../../packages/ui_kit
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

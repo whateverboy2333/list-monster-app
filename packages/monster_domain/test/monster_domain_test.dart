@@ -65,6 +65,9 @@ void main() {
     expect(entry.eventName, 'xp_reverted');
     expect(entry.amount, -10);
     expect(entry.originalXpLedgerId, 'xp_1');
+    expect(entry.payload['originalXpLedgerId'], 'xp_1');
+    expect(entry.payload['revertedAt'], '2026-07-04T10:00:00.000');
+    expect(entry.payload['reason'], 'undo_completion');
   });
 
   test('calculates task completion XP from completion order and priority', () {
@@ -84,6 +87,8 @@ void main() {
       XpPolicy.taskCompletionXp(completionOrderOfDay: 11, highPriority: false),
       1,
     );
+    expect(XpPolicy.capFormalXp(currentDailyXp: 120, rawAmount: 15), 5);
+    expect(XpPolicy.capFormalXp(currentDailyXp: 125, rawAmount: 10), 0);
   });
 
   test('keeps the monster in egg stage while XP and mood change', () {
@@ -100,6 +105,12 @@ void main() {
     expect(updated.lifetimeXp, 10);
     expect(updated.currentLevelXp, 10);
     expect(updated.moodState, MonsterMood.energetic);
+
+    final leveled = monster.applyXp(
+      const XpGrant(sourceEventId: 'evt_2', amount: 120),
+    );
+    expect(leveled.level, 3);
+    expect(leveled.currentLevelXp, 20);
   });
 
   test('creates daily task milestone feedback at 3 and 6 completions', () {
@@ -118,11 +129,49 @@ void main() {
     expect(smallStart?.milestoneKey, 'small_start');
     expect(smallStart?.title, '小试身手');
     expect(smallStart?.payload['localDate'], '2026-07-04');
-    expect(
-      smallStart?.payload['actionKey'],
-      'daily_task_milestone_small_start',
-    );
+    expect(smallStart?.payload['actionKey'], 'task_milestone');
     expect(fruitfulDay?.milestoneKey, 'fruitful_day');
     expect(fruitfulDay?.title, '收获满满');
+  });
+
+  test(
+    'updates streak and records an internal break without punishment data',
+    () {
+      final streak = StreakSnapshot.empty(
+        timezoneId: 'Asia/Shanghai',
+      ).recordActiveDay(DateTime(2026, 7, 1)).streak;
+
+      final result = streak.recordActiveDay(DateTime(2026, 7, 4));
+
+      expect(result.streak.currentStreakDays, 1);
+      expect(result.streak.bestStreakDays, 1);
+      expect(result.updatedEvent?.eventName, 'streak_updated');
+      expect(result.breakEvent?.eventName, 'streak_break');
+      expect(
+        result.breakEvent?.payload['reason'],
+        'no_rewardable_task_completed',
+      );
+    },
+  );
+
+  test('creates daily summary and pet reaction events with frozen names', () {
+    final summary = DailyTaskSummary(
+      summaryForDate: DateTime(2026, 7, 4),
+      timezoneId: 'Asia/Shanghai',
+      completedEligibleTaskCount: 3,
+      createdTaskCount: 4,
+      feedbackText: '昨天你完成了 3 件小事，小单都记得。',
+    );
+    final pet = MonsterPetReactionEvent(
+      monsterId: 'monster_1',
+      reactionKey: 'wake_up',
+      touchCountInSleep: 3,
+      interactedAt: DateTime(2026, 7, 5, 23),
+    );
+
+    expect(summary.eventName, 'daily_task_summary');
+    expect(summary.payload['summaryForDate'], '2026-07-04');
+    expect(pet.eventName, 'monster_pet_reacted');
+    expect(pet.payload['reactionKey'], 'wake_up');
   });
 }
