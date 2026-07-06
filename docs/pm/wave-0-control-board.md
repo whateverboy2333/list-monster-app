@@ -14,7 +14,7 @@
 
 节点 4：任务系统 P0 完成，已通过 PM 验收，作为节点 5 输入基线。
 
-节点 5：怪兽养成与激励 P0 已通过 QA 返工复检与 PM 验收。`QA-N5-001` 最终质检曾裁决为 fail，`FE-N5-001` 已完成返工；`QA-N5-002` 复检裁决为 pass，`flutter test` 33 项通过，相关 analyze 与 domain 测试通过。当前进入提交合并收口。
+节点 5：怪兽养成与激励 P0 已通过 QA 返工复检与 PM 验收，并已合并入 `master`。`QA-N5-001` 最终质检曾裁决为 fail，`FE-N5-001` 已完成返工；`QA-N5-002` 复检裁决为 pass，`flutter test` 33 项通过，相关 analyze 与 domain 测试通过。
 
 ## Agent 名册
 
@@ -70,7 +70,7 @@
 
 详见 [node-roadmap-freeze.md](node-roadmap-freeze.md)。
 
-## 当前推进节点：节点 5
+## 最近完成节点：节点 5
 
 节点 5 名称：怪兽养成与激励 P0 完成。
 
