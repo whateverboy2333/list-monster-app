@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:account_domain/account_domain.dart';
 import 'package:monster_domain/monster_domain.dart';
 import 'package:sprite_runtime/sprite_runtime.dart';
 import 'package:task_domain/task_domain.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'account/account_session_controller.dart';
 import 'language_preference_store.dart';
+import 'sync/app_sync_controller.dart';
 import 'task_system_controller.dart';
 
 void main() {
@@ -87,6 +90,43 @@ class AppStrings {
     '游客、通知、勿扰和桌宠开关会在后续节点接入。',
     'Guest mode, notifications, focus mode, and desktop pet settings will arrive in later nodes.',
   );
+  String get accountSubtitle =>
+      pick('本地模拟账号与同步入口。', 'Local simulated account and sync entry points.');
+  String get accountStatusLabel => pick('账号状态', 'Account status');
+  String get accountStatusGuest => pick('游客', 'Guest');
+  String get accountStatusRegistered => pick('已登录', 'Signed in');
+  String get accountStatusDeletionPending =>
+      pick('注销冷静期', 'Deletion cooling-off');
+  String get accountStatusDeleted => pick('已注销', 'Deleted');
+  String get accountIdLabel => pick('账号 ID', 'Account ID');
+  String get deletionEffectiveAt => pick('生效时间', 'Effective at');
+  String get localSimulatedLogin => pick('本地模拟登录', 'Local simulated login');
+  String get requestDeletion => pick('申请注销', 'Request deletion');
+  String get cancelDeletion => pick('取消注销', 'Cancel deletion');
+  String get generateSnapshot => pick('生成本地快照', 'Generate local snapshot');
+  String get snapshotGenerated => pick('快照已写入本地存储', 'Snapshot saved locally');
+  String get readOnlyTitle => pick('冷静期只读', 'Read-only cooling-off');
+  String get readOnlyMessage => pick(
+    '账号正在注销冷静期，只能取消注销后继续操作。',
+    'This account is in deletion cooling-off. Cancel deletion before editing.',
+  );
+  String get pendingMergeTitle => pick('确认合并游客数据', 'Confirm guest data merge');
+  String mergePreview(int guestTaskCount, int cloudTaskCount) => pick(
+    '检测到游客有 $guestTaskCount 条本地数据，模拟云端有 $cloudTaskCount 条数据，需要你确认合并。',
+    'Guest has $guestTaskCount local item(s) and the mock cloud has $cloudTaskCount item(s). Confirm before merging.',
+  );
+  String get confirmMerge => pick('确认合并', 'Confirm merge');
+  String get cancelMerge => pick('取消合并', 'Cancel merge');
+  String get signedInMessage =>
+      pick('已完成本地模拟登录', 'Local simulated login complete');
+  String get mergeCancelledMessage =>
+      pick('已取消合并，两侧数据未变', 'Merge cancelled; both sides are unchanged');
+  String get mergeConfirmedMessage => pick('游客数据已合并', 'Guest data merged');
+  String get deletionRequestedMessage =>
+      pick('已进入注销冷静期', 'Deletion cooling-off started');
+  String get deletionCancelledMessage => pick('已取消注销', 'Deletion cancelled');
+  String mockCloudDataCount(int count) =>
+      pick('模拟云端数据：$count 条', 'Mock cloud data: $count item(s)');
 
   String get todaySubtitle => pick('把小事喂给小单。', 'Feed small tasks to Xiaodan.');
   String get firstTaskWaiting =>
@@ -326,9 +366,15 @@ class AppStrings {
 }
 
 class ListMonsterApp extends StatefulWidget {
-  const ListMonsterApp({super.key, this.taskSystemController, this.openedAt});
+  const ListMonsterApp({
+    super.key,
+    this.taskSystemController,
+    this.accountSessionController,
+    this.openedAt,
+  });
 
   final TaskSystemController? taskSystemController;
+  final AccountSessionController? accountSessionController;
   final DateTime? openedAt;
 
   @override
@@ -382,6 +428,7 @@ class _ListMonsterAppState extends State<ListMonsterApp> {
         theme: ListMonsterTheme.light(),
         home: ListMonsterShell(
           taskSystemController: widget.taskSystemController,
+          accountSessionController: widget.accountSessionController,
           openedAt: widget.openedAt,
         ),
       ),
@@ -390,9 +437,15 @@ class _ListMonsterAppState extends State<ListMonsterApp> {
 }
 
 class ListMonsterShell extends StatefulWidget {
-  const ListMonsterShell({super.key, this.taskSystemController, this.openedAt});
+  const ListMonsterShell({
+    super.key,
+    this.taskSystemController,
+    this.accountSessionController,
+    this.openedAt,
+  });
 
   final TaskSystemController? taskSystemController;
+  final AccountSessionController? accountSessionController;
   final DateTime? openedAt;
 
   @override
@@ -403,17 +456,28 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
   int _tabIndex = 0;
   late final TaskSystemController _taskSystem;
   late final bool _ownsTaskSystem;
+  late final AccountSessionController _accountSession;
+  late final bool _ownsAccountSession;
+  late final AppSyncController _syncController;
 
   @override
   void initState() {
     super.initState();
     _taskSystem = widget.taskSystemController ?? TaskSystemController();
     _ownsTaskSystem = widget.taskSystemController == null;
+    _accountSession =
+        widget.accountSessionController ?? AccountSessionController();
+    _ownsAccountSession = widget.accountSessionController == null;
+    _syncController = AppSyncController(localStore: _accountSession.localStore);
+    _accountSession.restore();
     _taskSystem.recordAppOpened(widget.openedAt ?? DateTime.now());
   }
 
   @override
   void dispose() {
+    if (_ownsAccountSession) {
+      _accountSession.dispose();
+    }
     if (_ownsTaskSystem) {
       _taskSystem.dispose();
     }
@@ -424,10 +488,14 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
   Widget build(BuildContext context) {
     final strings = context.s;
     final tabs = [
-      TodayTab(controller: _taskSystem),
-      LongTermTab(controller: _taskSystem),
-      MonsterTab(controller: _taskSystem),
-      PlaceholderTab(title: strings.tabMe, message: strings.mePlaceholder),
+      TodayTab(controller: _taskSystem, accountSession: _accountSession),
+      LongTermTab(controller: _taskSystem, accountSession: _accountSession),
+      MonsterTab(controller: _taskSystem, accountSession: _accountSession),
+      MeTab(
+        accountSession: _accountSession,
+        taskSystem: _taskSystem,
+        syncController: _syncController,
+      ),
     ];
 
     return Scaffold(
@@ -486,9 +554,14 @@ class _LanguageToggle extends StatelessWidget {
 }
 
 class TodayTab extends StatefulWidget {
-  const TodayTab({super.key, required this.controller});
+  const TodayTab({
+    super.key,
+    required this.controller,
+    required this.accountSession,
+  });
 
   final TaskSystemController controller;
+  final AccountSessionController accountSession;
 
   @override
   State<TodayTab> createState() => _TodayTabState();
@@ -514,10 +587,11 @@ class _TodayTabState extends State<TodayTab> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.controller,
+      animation: Listenable.merge([widget.controller, widget.accountSession]),
       builder: (context, _) {
         final strings = context.s;
         final controller = widget.controller;
+        final readOnly = widget.accountSession.isReadOnly;
         final milestone = controller.latestMilestone;
         final todayTasks = controller.todayTasks;
 
@@ -549,14 +623,18 @@ class _TodayTabState extends State<TodayTab> {
               if (!controller.hasTasks) const SizedBox(height: 20),
               TextField(
                 controller: _titleController,
+                readOnly: readOnly,
                 decoration: InputDecoration(
                   labelText: strings.newTaskLabel,
                   border: const OutlineInputBorder(),
                 ),
-                onSubmitted: (_) => _createTask(),
+                onTap: readOnly ? () => _showReadOnlySnack(context) : null,
+                onSubmitted: (_) =>
+                    readOnly ? _showReadOnlySnack(context) : _createTask(),
               ),
               const SizedBox(height: 12),
               _NewTaskOptions(
+                enabled: !readOnly,
                 highPriorityEnabled: _withHighPriority,
                 reminderEnabled: _withTaskReminder,
                 repeatEnabled: _withRepeatPlaceholder,
@@ -579,7 +657,9 @@ class _TodayTabState extends State<TodayTab> {
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
-                onPressed: _createTask,
+                onPressed: readOnly
+                    ? () => _showReadOnlySnack(context)
+                    : _createTask,
                 icon: const Icon(Icons.add_task_outlined),
                 label: Text(strings.addToToday),
               ),
@@ -595,6 +675,8 @@ class _TodayTabState extends State<TodayTab> {
                 ...todayTasks.map(
                   (task) => _TaskTile(
                     task: task,
+                    enabled: !readOnly,
+                    onReadOnly: () => _showReadOnlySnack(context),
                     onComplete: () => controller.completeTask(task.id),
                     onUndo: () => controller.undoCompletion(task.id),
                     onCancel: () => controller.cancelTask(task.id),
@@ -622,16 +704,24 @@ class _TodayTabState extends State<TodayTab> {
                 ),
               ],
               const SizedBox(height: 24),
-              _TodayCleanupActions(controller: controller),
+              _TodayCleanupActions(
+                controller: controller,
+                enabled: !readOnly,
+                onReadOnly: () => _showReadOnlySnack(context),
+              ),
               const SizedBox(height: 16),
               _RecoverableSection(
                 title: strings.cancelledTasks,
                 tasks: controller.cancelledTasks,
+                enabled: !readOnly,
+                onReadOnly: () => _showReadOnlySnack(context),
                 onRestore: controller.restoreTask,
               ),
               _RecoverableSection(
                 title: strings.deletedTasks,
                 tasks: controller.deletedTasks,
+                enabled: !readOnly,
+                onReadOnly: () => _showReadOnlySnack(context),
                 onRestore: controller.restoreTask,
               ),
             ],
@@ -664,6 +754,7 @@ class _TodayTabState extends State<TodayTab> {
 
 class _NewTaskOptions extends StatelessWidget {
   const _NewTaskOptions({
+    required this.enabled,
     required this.highPriorityEnabled,
     required this.reminderEnabled,
     required this.repeatEnabled,
@@ -675,6 +766,7 @@ class _NewTaskOptions extends StatelessWidget {
     required this.onReminderTimeChanged,
   });
 
+  final bool enabled;
   final bool highPriorityEnabled;
   final bool reminderEnabled;
   final bool repeatEnabled;
@@ -709,7 +801,7 @@ class _NewTaskOptions extends StatelessWidget {
             const SizedBox(height: 8),
             SwitchListTile(
               value: highPriorityEnabled,
-              onChanged: onHighPriorityChanged,
+              onChanged: enabled ? onHighPriorityChanged : null,
               title: Text(strings.highPriorityTask),
               subtitle: Text(strings.highPriorityTaskHint),
               secondary: const Icon(Icons.priority_high_outlined),
@@ -717,7 +809,7 @@ class _NewTaskOptions extends StatelessWidget {
             ),
             SwitchListTile(
               value: repeatEnabled,
-              onChanged: onRepeatChanged,
+              onChanged: enabled ? onRepeatChanged : null,
               title: Text(strings.repeatPlaceholder),
               subtitle: Text(strings.repeatPlaceholderHint),
               secondary: const Icon(Icons.repeat_outlined),
@@ -725,7 +817,7 @@ class _NewTaskOptions extends StatelessWidget {
             ),
             SwitchListTile(
               value: reminderEnabled,
-              onChanged: onReminderEnabledChanged,
+              onChanged: enabled ? onReminderEnabledChanged : null,
               title: Text(strings.reminderIntent),
               subtitle: Text(strings.reminderIntentHint),
               secondary: const Icon(Icons.notifications_outlined),
@@ -736,6 +828,7 @@ class _NewTaskOptions extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TextField(
                   controller: reminderTimeController,
+                  enabled: enabled,
                   decoration: InputDecoration(
                     labelText: strings.reminderTime,
                     hintText: '20:30',
@@ -754,16 +847,22 @@ class _NewTaskOptions extends StatelessWidget {
 }
 
 class LongTermTab extends StatelessWidget {
-  const LongTermTab({super.key, required this.controller});
+  const LongTermTab({
+    super.key,
+    required this.controller,
+    required this.accountSession,
+  });
 
   final TaskSystemController controller;
+  final AccountSessionController accountSession;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: Listenable.merge([controller, accountSession]),
       builder: (context, _) {
         final strings = context.s;
+        final readOnly = accountSession.isReadOnly;
         return ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -773,8 +872,9 @@ class LongTermTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () =>
-                  _showCreateLongTermTaskDialog(context, controller),
+              onPressed: readOnly
+                  ? () => _showReadOnlySnack(context)
+                  : () => _showCreateLongTermTaskDialog(context, controller),
               icon: const Icon(Icons.add_task_outlined),
               label: Text(strings.createLongTermTask),
             ),
@@ -799,12 +899,14 @@ class LongTermTab extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: task.status == LongTermTaskStatus.active
-                          ? () => _showEditLongTermTaskDialog(
-                              context,
-                              controller,
-                              task,
-                              childTasks,
-                            )
+                          ? readOnly
+                                ? () => _showReadOnlySnack(context)
+                                : () => _showEditLongTermTaskDialog(
+                                    context,
+                                    controller,
+                                    task,
+                                    childTasks,
+                                  )
                           : null,
                       icon: const Icon(Icons.edit_calendar_outlined),
                       label: Text(strings.editDateAndBreakdown),
@@ -1324,9 +1426,15 @@ bool _isDateWithinRange(DateTime value, DateTime startDate, DateTime dueDate) {
 }
 
 class _TodayCleanupActions extends StatelessWidget {
-  const _TodayCleanupActions({required this.controller});
+  const _TodayCleanupActions({
+    required this.controller,
+    required this.enabled,
+    required this.onReadOnly,
+  });
 
   final TaskSystemController controller;
+  final bool enabled;
+  final VoidCallback onReadOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1348,12 +1456,14 @@ class _TodayCleanupActions extends StatelessWidget {
             FilledButton.icon(
               onPressed: controller.activeTasks.isEmpty
                   ? null
-                  : controller.applyNoPressureCleanup,
+                  : enabled
+                  ? controller.applyNoPressureCleanup
+                  : onReadOnly,
               icon: const Icon(Icons.self_improvement_outlined),
               label: Text(strings.letGoUnfinished),
             ),
             OutlinedButton.icon(
-              onPressed: controller.undoLastBatchCleanup,
+              onPressed: enabled ? controller.undoLastBatchCleanup : onReadOnly,
               icon: const Icon(Icons.undo_outlined),
               label: Text(strings.undoLastCleanup),
             ),
@@ -1368,11 +1478,15 @@ class _RecoverableSection extends StatelessWidget {
   const _RecoverableSection({
     required this.title,
     required this.tasks,
+    required this.enabled,
+    required this.onReadOnly,
     required this.onRestore,
   });
 
   final String title;
   final List<TaskItem> tasks;
+  final bool enabled;
+  final VoidCallback onReadOnly;
   final ValueChanged<String> onRestore;
 
   @override
@@ -1390,7 +1504,7 @@ class _RecoverableSection extends StatelessWidget {
             title: Text(task.title),
             subtitle: Text(context.s.taskStatus(task.status)),
             trailing: TextButton(
-              onPressed: () => onRestore(task.id),
+              onPressed: enabled ? () => onRestore(task.id) : onReadOnly,
               child: Text(context.s.restore),
             ),
           ),
@@ -1444,6 +1558,8 @@ class _MonsterStatusStrip extends StatelessWidget {
 class _TaskTile extends StatelessWidget {
   const _TaskTile({
     required this.task,
+    required this.enabled,
+    required this.onReadOnly,
     required this.onComplete,
     required this.onUndo,
     required this.onCancel,
@@ -1453,6 +1569,8 @@ class _TaskTile extends StatelessWidget {
   });
 
   final TaskItem task;
+  final bool enabled;
+  final VoidCallback onReadOnly;
   final VoidCallback onComplete;
   final VoidCallback onUndo;
   final VoidCallback onCancel;
@@ -1468,7 +1586,9 @@ class _TaskTile extends StatelessWidget {
       children: [
         CheckboxListTile(
           value: task.isCompleted,
-          onChanged: task.isCompleted ? null : (_) => onComplete(),
+          onChanged: task.isCompleted
+              ? null
+              : (_) => enabled ? onComplete() : onReadOnly(),
           title: Text(task.title),
           subtitle: Text(_subtitle(context)),
           controlAffinity: ListTileControlAffinity.leading,
@@ -1483,29 +1603,31 @@ class _TaskTile extends StatelessWidget {
                 tooltip: task.repeatRuleId == null
                     ? strings.setRepeatPlaceholder
                     : strings.cancelRepeatPlaceholder,
-                onPressed: onToggleRepeat,
+                onPressed: enabled ? onToggleRepeat : onReadOnly,
                 icon: const Icon(Icons.repeat_outlined),
               ),
               IconButton(
                 tooltip: strings.setReminderTime,
-                onPressed: () => _showReminderDialog(context),
+                onPressed: enabled
+                    ? () => _showReminderDialog(context)
+                    : onReadOnly,
                 icon: const Icon(Icons.notifications_outlined),
               ),
               if (task.isCompleted)
                 IconButton(
                   tooltip: strings.undoCompletion,
-                  onPressed: onUndo,
+                  onPressed: enabled ? onUndo : onReadOnly,
                   icon: const Icon(Icons.undo_outlined),
                 ),
               if (task.status == TaskStatus.active)
                 IconButton(
                   tooltip: strings.letGoTask,
-                  onPressed: onCancel,
+                  onPressed: enabled ? onCancel : onReadOnly,
                   icon: const Icon(Icons.self_improvement_outlined),
                 ),
               IconButton(
                 tooltip: strings.deleteTask,
-                onPressed: onDelete,
+                onPressed: enabled ? onDelete : onReadOnly,
                 icon: const Icon(Icons.delete_outline),
               ),
             ],
@@ -1717,17 +1839,23 @@ class _FeedbackCard extends StatelessWidget {
 }
 
 class MonsterTab extends StatelessWidget {
-  const MonsterTab({super.key, required this.controller});
+  const MonsterTab({
+    super.key,
+    required this.controller,
+    required this.accountSession,
+  });
 
   final TaskSystemController controller;
+  final AccountSessionController accountSession;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: Listenable.merge([controller, accountSession]),
       builder: (context, _) {
         final monster = controller.monster;
         final strings = context.s;
+        final readOnly = accountSession.isReadOnly;
 
         return ListView(
           padding: const EdgeInsets.all(20),
@@ -1774,7 +1902,9 @@ class MonsterTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () => controller.petMonster(),
+              onPressed: readOnly
+                  ? () => _showReadOnlySnack(context)
+                  : () => controller.petMonster(),
               icon: const Icon(Icons.touch_app_outlined),
               label: Text(strings.petMonster),
             ),
@@ -1789,6 +1919,360 @@ class MonsterTab extends StatelessWidget {
       },
     );
   }
+}
+
+class MeTab extends StatelessWidget {
+  const MeTab({
+    super.key,
+    required this.accountSession,
+    required this.taskSystem,
+    required this.syncController,
+  });
+
+  final AccountSessionController accountSession;
+  final TaskSystemController taskSystem;
+  final AppSyncController syncController;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([accountSession, taskSystem]),
+      builder: (context, _) {
+        final strings = context.s;
+        final account = accountSession.account;
+        final readOnly = accountSession.isReadOnly;
+
+        return ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            ListMonsterSectionHeader(
+              title: strings.tabMe,
+              subtitle: strings.accountSubtitle,
+            ),
+            const SizedBox(height: 16),
+            if (readOnly) ...[
+              _ReadOnlyNotice(message: strings.readOnlyMessage),
+              const SizedBox(height: 12),
+            ],
+            _AccountStatusPanel(
+              statusLabel: strings.accountStatusLabel,
+              statusText: _accountStatusText(strings, account.status),
+              accountIdLabel: strings.accountIdLabel,
+              accountId: account.accountId,
+              effectiveAtLabel: strings.deletionEffectiveAt,
+              deletionEffectiveAt: account.deletionEffectiveAt,
+            ),
+            const SizedBox(height: 12),
+            Text(strings.mockCloudDataCount(accountSession.mockCloudTaskCount)),
+            if (accountSession.hasPendingMerge) ...[
+              const SizedBox(height: 12),
+              _PendingMergePanel(
+                title: strings.pendingMergeTitle,
+                message: strings.mergePreview(
+                  accountSession.pendingGuestTaskCount,
+                  accountSession.pendingCloudTaskCount,
+                ),
+                confirmLabel: strings.confirmMerge,
+                cancelLabel: strings.cancelMerge,
+                onConfirm: () => _confirmMerge(context),
+                onCancel: () => _cancelMerge(context),
+              ),
+            ],
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: readOnly
+                      ? () => _showReadOnlySnack(context)
+                      : () => _simulateLogin(context),
+                  icon: const Icon(Icons.login_outlined),
+                  label: Text(strings.localSimulatedLogin),
+                ),
+                OutlinedButton.icon(
+                  onPressed: readOnly
+                      ? () => _showReadOnlySnack(context)
+                      : () => _generateSnapshot(context),
+                  icon: const Icon(Icons.camera_outdoor_outlined),
+                  label: Text(strings.generateSnapshot),
+                ),
+                if (account.canRequestDeletion)
+                  OutlinedButton.icon(
+                    onPressed: readOnly
+                        ? () => _showReadOnlySnack(context)
+                        : () => _requestDeletion(context),
+                    icon: const Icon(Icons.no_accounts_outlined),
+                    label: Text(strings.requestDeletion),
+                  ),
+                if (account.isDeletionPending)
+                  FilledButton.icon(
+                    onPressed: () => _cancelDeletion(context),
+                    icon: const Icon(Icons.restore_outlined),
+                    label: Text(strings.cancelDeletion),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _simulateLogin(BuildContext context) async {
+    final result = await accountSession.simulateLogin(
+      guestTaskCount: taskSystem.tasks.length,
+    );
+    if (!context.mounted) {
+      return;
+    }
+
+    switch (result) {
+      case SimulatedLoginOutcome.signedIn:
+        _showSnack(context, context.s.signedInMessage);
+      case SimulatedLoginOutcome.mergeConfirmationRequired:
+        await _showMergeConfirmationDialog(context);
+      case SimulatedLoginOutcome.readOnlyBlocked:
+        _showReadOnlySnack(context);
+    }
+  }
+
+  Future<void> _showMergeConfirmationDialog(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.s.pendingMergeTitle),
+        content: Text(
+          context.s.mergePreview(
+            accountSession.pendingGuestTaskCount,
+            accountSession.pendingCloudTaskCount,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(context.s.cancelMerge),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(context.s.confirmMerge),
+          ),
+        ],
+      ),
+    );
+    if (!context.mounted || confirmed == null) {
+      return;
+    }
+    if (confirmed) {
+      await _confirmMerge(context);
+    } else {
+      await _cancelMerge(context);
+    }
+  }
+
+  Future<void> _confirmMerge(BuildContext context) async {
+    await accountSession.confirmPendingMerge();
+    if (context.mounted) {
+      _showSnack(context, context.s.mergeConfirmedMessage);
+    }
+  }
+
+  Future<void> _cancelMerge(BuildContext context) async {
+    await accountSession.cancelPendingMerge();
+    if (context.mounted) {
+      _showSnack(context, context.s.mergeCancelledMessage);
+    }
+  }
+
+  Future<void> _requestDeletion(BuildContext context) async {
+    final requested = await accountSession.requestDeletion();
+    if (!context.mounted) {
+      return;
+    }
+    _showSnack(
+      context,
+      requested
+          ? context.s.deletionRequestedMessage
+          : context.s.readOnlyMessage,
+    );
+  }
+
+  Future<void> _cancelDeletion(BuildContext context) async {
+    final cancelled = await accountSession.cancelDeletion();
+    if (!context.mounted) {
+      return;
+    }
+    if (cancelled) {
+      _showSnack(context, context.s.deletionCancelledMessage);
+    }
+  }
+
+  Future<void> _generateSnapshot(BuildContext context) async {
+    await syncController.generateCompanionSnapshot(taskSystem);
+    if (context.mounted) {
+      _showSnack(context, context.s.snapshotGenerated);
+    }
+  }
+}
+
+class _AccountStatusPanel extends StatelessWidget {
+  const _AccountStatusPanel({
+    required this.statusLabel,
+    required this.statusText,
+    required this.accountIdLabel,
+    required this.accountId,
+    required this.effectiveAtLabel,
+    required this.deletionEffectiveAt,
+  });
+
+  final String statusLabel;
+  final String statusText;
+  final String accountIdLabel;
+  final String accountId;
+  final String effectiveAtLabel;
+  final DateTime? deletionEffectiveAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(statusLabel, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(label: Text(statusText)),
+                Chip(label: Text('$accountIdLabel: $accountId')),
+              ],
+            ),
+            if (deletionEffectiveAt != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '$effectiveAtLabel: ${_formatDateTimeForDisplay(deletionEffectiveAt!)}',
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadOnlyNotice extends StatelessWidget {
+  const _ReadOnlyNotice({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline, color: colorScheme.onErrorContainer),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(color: colorScheme.onErrorContainer),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingMergePanel extends StatelessWidget {
+  const _PendingMergePanel({
+    required this.title,
+    required this.message,
+    required this.confirmLabel,
+    required this.cancelLabel,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  final String title;
+  final String message;
+  final String confirmLabel;
+  final String cancelLabel;
+  final VoidCallback onConfirm;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(message),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton(onPressed: onConfirm, child: Text(confirmLabel)),
+                TextButton(onPressed: onCancel, child: Text(cancelLabel)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _accountStatusText(AppStrings strings, AccountStatus status) {
+  return switch (status) {
+    AccountStatus.guest => strings.accountStatusGuest,
+    AccountStatus.registered => strings.accountStatusRegistered,
+    AccountStatus.deletionPending => strings.accountStatusDeletionPending,
+    AccountStatus.deleted => strings.accountStatusDeleted,
+  };
+}
+
+String _formatDateTimeForDisplay(DateTime value) {
+  final local = value.toLocal();
+  final month = local.month.toString().padLeft(2, '0');
+  final day = local.day.toString().padLeft(2, '0');
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return '${local.year}-$month-$day $hour:$minute';
+}
+
+void _showReadOnlySnack(BuildContext context) {
+  _showSnack(context, context.s.readOnlyMessage);
+}
+
+void _showSnack(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
 class PlaceholderTab extends StatelessWidget {

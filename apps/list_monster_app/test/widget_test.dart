@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:account_domain/account_domain.dart';
+import 'package:list_monster_app/account/account_session_controller.dart';
 import 'package:list_monster_app/main.dart';
 import 'package:list_monster_app/node3_core_loop.dart';
+import 'package:local_store/local_store.dart';
 import 'package:monster_domain/monster_domain.dart';
 import 'package:task_domain/task_domain.dart';
 
@@ -949,6 +952,164 @@ void main() {
 
     expect(find.textContaining('0/2 · 进行中'), findsOneWidget);
   });
+
+  testWidgets('me page shows guest, simulated login, deletion pending states', (
+    tester,
+  ) async {
+    final store = MemoryLocalStore();
+    final accountSession = AccountSessionController(
+      localStore: store,
+      now: () => DateTime.utc(2026, 7, 7, 8),
+    );
+    final taskSystem = TaskSystemController(
+      today: DateTime(2026, 7, 7),
+      now: DateTime(2026, 7, 7, 8),
+    );
+    addTearDown(accountSession.dispose);
+    addTearDown(taskSystem.dispose);
+
+    await tester.pumpWidget(
+      ListMonsterApp(
+        accountSessionController: accountSession,
+        taskSystemController: taskSystem,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _switchToEnglish(tester);
+
+    await tester.tap(find.text('Me'));
+    await tester.pumpAndSettle();
+    expect(find.text('Guest'), findsOneWidget);
+
+    await tester.tap(find.text('Local simulated login'));
+    await tester.pumpAndSettle();
+    expect(find.text('Signed in'), findsOneWidget);
+    expect(accountSession.status, AccountStatus.registered);
+
+    await tester.tap(find.text('Request deletion'));
+    await tester.pumpAndSettle();
+    expect(find.text('Deletion cooling-off'), findsOneWidget);
+    expect(find.textContaining('Cancel deletion before editing'), findsWidgets);
+
+    await _clearSnackBars(tester);
+    final cancelDeletionButton = find.widgetWithText(
+      FilledButton,
+      'Cancel deletion',
+    );
+    await tester.ensureVisible(cancelDeletionButton);
+    await tester.tap(cancelDeletionButton);
+    await tester.pumpAndSettle();
+    expect(find.text('Signed in'), findsOneWidget);
+    expect(accountSession.status, AccountStatus.registered);
+  });
+
+  testWidgets('simulated login shows merge confirmation and cancel is no-op', (
+    tester,
+  ) async {
+    final store = MemoryLocalStore();
+    final accountSession = AccountSessionController(
+      localStore: store,
+      now: () => DateTime.utc(2026, 7, 7, 8),
+    );
+    final taskSystem = TaskSystemController(
+      today: DateTime(2026, 7, 7),
+      now: DateTime(2026, 7, 7, 8),
+    );
+    taskSystem.createTask('local guest task');
+    addTearDown(accountSession.dispose);
+    addTearDown(taskSystem.dispose);
+
+    await tester.pumpWidget(
+      ListMonsterApp(
+        accountSessionController: accountSession,
+        taskSystemController: taskSystem,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _switchToEnglish(tester);
+    await tester.tap(find.text('Me'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Local simulated login'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Confirm guest data merge'),
+      ),
+      findsOneWidget,
+    );
+    expect(accountSession.hasPendingMerge, isTrue);
+    await tester.tap(find.text('Cancel merge').last);
+    await tester.pumpAndSettle();
+
+    final queue = await store.readSyncQueue();
+    expect(accountSession.status, AccountStatus.guest);
+    expect(accountSession.hasPendingMerge, isFalse);
+    expect(taskSystem.tasks.single.title, 'local guest task');
+    expect(queue, isEmpty);
+  });
+
+  testWidgets('deletion pending blocks app write entries until cancelled', (
+    tester,
+  ) async {
+    final accountSession = AccountSessionController(
+      now: () => DateTime.utc(2026, 7, 7, 8),
+    );
+    await accountSession.restore();
+    await accountSession.simulateLogin(guestTaskCount: 0, cloudTaskCount: 0);
+    await accountSession.requestDeletion();
+    final taskSystem = TaskSystemController(
+      today: DateTime(2026, 7, 7),
+      now: DateTime(2026, 7, 7, 8),
+    );
+    addTearDown(accountSession.dispose);
+    addTearDown(taskSystem.dispose);
+
+    await tester.pumpWidget(
+      ListMonsterApp(
+        accountSessionController: accountSession,
+        taskSystemController: taskSystem,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _switchToEnglish(tester);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'What needs to get done today?'),
+      'blocked task',
+    );
+    final addButton = find.text('Add to Today');
+    await tester.ensureVisible(addButton);
+    await tester.tap(addButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(taskSystem.tasks, isEmpty);
+    expect(find.textContaining('Cancel deletion before editing'), findsWidgets);
+
+    await tester.tap(find.text('Me'));
+    await tester.pumpAndSettle();
+    await _clearSnackBars(tester);
+    final cancelDeletionButton = find.widgetWithText(
+      FilledButton,
+      'Cancel deletion',
+    );
+    await tester.ensureVisible(cancelDeletionButton);
+    await tester.tap(cancelDeletionButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Today').first);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'What needs to get done today?'),
+      'allowed task',
+    );
+    await tester.ensureVisible(addButton);
+    await tester.tap(addButton);
+    await tester.pump();
+
+    expect(taskSystem.tasks.single.title, 'allowed task');
+  });
 }
 
 Finder _longTermStepField(int day, {DateTime? startDate}) =>
@@ -966,6 +1127,18 @@ Future<void> _selectLongTermDate(
   await tester.tap(find.text(date.day.toString()).last);
   await tester.pumpAndSettle();
   await tester.tap(find.text('确定'));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _switchToEnglish(WidgetTester tester) async {
+  if (find.text('EN').evaluate().isNotEmpty) {
+    await tester.tap(find.text('EN'));
+    await tester.pumpAndSettle();
+  }
+}
+
+Future<void> _clearSnackBars(WidgetTester tester) async {
+  ScaffoldMessenger.of(tester.element(find.byType(Scaffold))).clearSnackBars();
   await tester.pumpAndSettle();
 }
 

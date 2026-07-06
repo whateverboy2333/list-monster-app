@@ -316,7 +316,20 @@ Wave B 判定：通过 QA，可提交。
 
 目标: 将账号 / 本地存储 / 快照生成接入 App 壳与“我的”页。
 
-建议允许修改的文件范围: `apps/list_monster_app/lib/account/**`、`apps/list_monster_app/lib/sync/**`、`apps/list_monster_app/lib/main.dart`、`apps/list_monster_app/test/account_sync_*`、`apps/list_monster_app/test/widget_test.dart`
+背景: account_domain 与 local_store 底座已经完成，但 App 还没有账号状态、游客合并确认、注销冷静期的 UI / 控制器入口。
+
+验收标准:
+
+1. “我的”页能展示游客 / 已登录 / 注销冷静期状态。
+2. 支持本地模拟登录，不接真实 Auth。
+3. 登录时若存在游客数据与模拟云端数据冲突，必须展示合并确认；取消时两侧数据不变。
+4. deletion_pending 状态下，除取消注销外，App 层新增会同步的数据入口应被阻止或显示只读提示。
+5. 账号状态和合并确认使用 local_store 端口持久化或等价内存实现。
+6. 测试覆盖游客态、模拟登录、合并确认 / 取消、注销冷静期只读和取消注销。
+
+允许修改的文件范围: `apps/list_monster_app/lib/account/**`、`apps/list_monster_app/lib/sync/**`、`apps/list_monster_app/lib/main.dart`、`apps/list_monster_app/pubspec.yaml`、`apps/list_monster_app/pubspec.lock`、`apps/list_monster_app/test/account_sync_*`、`apps/list_monster_app/test/widget_test.dart`
+
+禁止事项: 不许修改通知目录、companion_snapshot 目录、Android、Windows、docs、packages；不许接真实 Auth；不许引入外部依赖；不许提交。
 
 依赖: N6-I-104、N6-I-105、N6-I-106。
 
@@ -324,7 +337,19 @@ Wave B 判定：通过 QA，可提交。
 
 目标: 建立通知适配层端口，消费 task_domain 勿扰与隐私规则。
 
-建议允许修改的文件范围: `apps/list_monster_app/lib/notifications/**`、`apps/list_monster_app/test/notifications/**`
+背景: task_domain 已补齐勿扰和提醒顺延领域规则。节点 6 首轮通知不接真实系统插件，只做 App 内通知适配端口和可测试调度计划。
+
+验收标准:
+
+1. 定义通知适配端口，支持权限状态、调度、取消、点击回流意图。
+2. 调度计划消费 task_domain 的勿扰、今晚顺延和隐私标题规则。
+3. 默认通知 payload 不包含具体任务标题。
+4. 勿扰期间默认不穿透，顺延到下一个可提醒时间。
+5. 测试覆盖权限拒绝、调度、取消、勿扰顺延、隐私标题、点击回流意图。
+
+允许修改的文件范围: `apps/list_monster_app/lib/notifications/**`、`apps/list_monster_app/test/notifications/**`
+
+禁止事项: 不许修改 main.dart、pubspec、Android、Windows、docs、packages、account、sync、companion_snapshot；不许接真实系统通知插件；不许引入新依赖；不许提交。
 
 依赖: N6-I-102、N6-I-105。
 
@@ -332,6 +357,76 @@ Wave B 判定：通过 QA，可提交。
 
 目标: 建立 CompanionSnapshot 持久化刷新链路。
 
-建议允许修改的文件范围: `apps/list_monster_app/lib/companion_snapshot/**`、`apps/list_monster_app/test/companion_snapshot_*`
+背景: App 快照生成器和 local_store 已完成，但还缺统一刷新 / 持久化链路。桌宠和 Widget 后续必须只读取持久化 CompanionSnapshot。
+
+验收标准:
+
+1. 提供快照刷新服务，将 CompanionSnapshot 生成后写入 local_store。
+2. 任务创建 / 完成 / 撤销 / 恢复、XP / Streak 变化、App 打开可触发刷新入口或等价可测试方法。
+3. 读取过期快照时能返回过期态或触发刷新建议。
+4. 不直接计算任务、XP、Streak，只消费快照生成器与 local_store。
+5. 测试覆盖刷新写入、过期读取、重复刷新不重复产生 XP / Streak、敏感标题不落盘到外部文案。
+
+允许修改的文件范围: `apps/list_monster_app/lib/companion_snapshot/**`、`apps/list_monster_app/test/companion_snapshot_*`
+
+禁止事项: 不许修改 main.dart、pubspec、Android、Windows、docs、packages、account、sync、notifications；不许引入新依赖；不许提交。
 
 依赖: N6-I-104、N6-I-105。
+
+## 当前等待
+
+N6-I-107 已完成：
+
+1. 变更范围为 `apps/list_monster_app/lib/account/**`、`apps/list_monster_app/lib/sync/**`、`apps/list_monster_app/lib/main.dart`、App pubspec 和账号同步测试。
+2. “我的”页展示游客 / 已登录 / 注销冷静期状态。
+3. 本地模拟登录、游客数据合并确认、冷静期只读门禁和取消注销已接入。
+4. `flutter test` 全量通过；实现 Agent 报告 `flutter analyze` 遇到分析服务 JSON 截断异常，未产出代码诊断。
+
+N6-I-108 已完成：
+
+1. 变更范围为 `apps/list_monster_app/lib/notifications/**` 与 `apps/list_monster_app/test/notifications/**`。
+2. 通知适配端口支持权限状态、调度、取消、点击回流意图。
+3. 调度计划消费提醒意图，不包含具体任务标题，勿扰默认顺延。
+
+N6-I-109 已完成：
+
+1. 变更范围为 `apps/list_monster_app/lib/companion_snapshot/**` 与 `apps/list_monster_app/test/companion_snapshot_*`。
+2. CompanionSnapshot 刷新服务已将生成结果写入 local_store。
+3. 过期读取、重复刷新无成长副作用、敏感标题不落盘均已覆盖。
+
+`QA-N6-C-001` 复检裁决为 pass：
+
+1. “我的”页账号状态、模拟登录、游客合并确认、注销冷静期只读和取消注销通过。
+2. 通知适配端口、权限状态、调度、取消、点击回流、勿扰顺延和隐私标题通过。
+3. CompanionSnapshot 持久化刷新、过期读取、重复刷新无成长副作用和敏感标题不落盘通过。
+4. `apps/list_monster_app` 的 `flutter test` 57 项通过。
+5. `apps/list_monster_app` 的 `dart analyze .` 通过。
+6. 实现范围合规。
+
+Wave C 判定：通过 QA，可提交。
+
+## 后续 Wave D 候选
+
+任务ID: N6-I-110
+
+目标: PC 第二窗口桌宠基础壳。
+
+建议允许修改的文件范围: `apps/list_monster_app/windows/**`、`apps/list_monster_app/lib/desktop_pet/**`、`apps/list_monster_app/test/desktop_pet_*`
+
+依赖: N6-I-104、N6-I-109。
+
+任务ID: N6-I-111
+
+目标: Android Glance Widget 原生壳。
+
+建议允许修改的文件范围: `apps/list_monster_app/android/**`
+
+依赖: N6-I-104、N6-I-109。
+
+任务ID: N6-I-112
+
+目标: 节点 6 端到端 QA 冻结前验收。
+
+建议允许修改的文件范围: 无，只读验收。
+
+依赖: N6-I-107、N6-I-108、N6-I-109，以及后续桌宠 / Widget 实现。

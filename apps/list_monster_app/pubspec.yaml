@@ -33,6 +33,8 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+  account_domain:
+    path: ../../packages/account_domain
   companion_contract:
     path: ../../packages/companion_contract
   core:
