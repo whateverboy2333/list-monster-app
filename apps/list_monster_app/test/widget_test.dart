@@ -63,7 +63,18 @@ void main() {
   });
 
   testWidgets('runs the node 3 local core loop', (tester) async {
-    await tester.pumpWidget(const ListMonsterApp());
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 4),
+      now: DateTime(2026, 7, 4, 9),
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      ListMonsterApp(
+        taskSystemController: controller,
+        openedAt: DateTime(2026, 7, 4, 9),
+      ),
+    );
 
     for (final title in ['喝一杯水', '整理桌面', '写下复盘']) {
       final input = find.byType(EditableText);
@@ -109,6 +120,265 @@ void main() {
     expect(controller.todayXp, 10);
   });
 
+  test('node 5 controller applies high priority XP and daily cap', () {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 4),
+      now: DateTime(2026, 7, 4, 9),
+    );
+
+    controller.createTask('高优先级任务', priority: TaskPriority.high);
+    controller.completeTask(controller.tasks.single.id);
+
+    expect(controller.todayXp, 15);
+    expect(controller.xpLedger.single.amount, 15);
+
+    for (var index = 0; index < 130; index++) {
+      controller.createTask('封顶任务 $index');
+      controller.completeTask(controller.tasks.last.id);
+    }
+
+    expect(controller.todayXp, XpPolicy.dailyFormalXpCap);
+    expect(
+      controller.xpLedger.last.dailyTotalAfterGrant,
+      XpPolicy.dailyFormalXpCap,
+    );
+  });
+
+  test(
+    'node 5 controller grants cumulative reward on the fourth active day',
+    () {
+      final controller = TaskSystemController(
+        today: DateTime(2026, 7, 4),
+        now: DateTime(2026, 7, 4, 9),
+        priorActiveDates: [
+          DateTime(2026, 7, 1),
+          DateTime(2026, 7, 2),
+          DateTime(2026, 7, 3),
+        ],
+      );
+
+      controller.createTask('继续保持');
+      controller.completeTask(controller.tasks.single.id);
+
+      expect(controller.activeDayCount, 4);
+      expect(controller.todayXp, 30);
+      expect(
+        controller.latestCumulativeReward?.eventName,
+        'cumulative_active_reward',
+      );
+      expect(
+        controller.xpLedger.map((entry) => entry.sourceType.contractName),
+        contains('cumulative_active_reward'),
+      );
+    },
+  );
+
+  test('node 5 controller records streak break without XP penalty', () {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 4),
+      now: DateTime(2026, 7, 4, 9),
+      priorActiveDates: [DateTime(2026, 7, 1)],
+    );
+
+    controller.createTask('重新开始');
+    controller.completeTask(controller.tasks.single.id);
+
+    expect(controller.streak.currentStreakDays, 1);
+    expect(controller.todayXp, 10);
+    expect(controller.events.whereType<StreakBreakEvent>(), hasLength(1));
+  });
+
+  testWidgets('node 5 app startup records previous-day summary without XP', (
+    tester,
+  ) async {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 5),
+      now: DateTime(2026, 7, 5, 9),
+      lastOpenedDate: DateTime(2026, 7, 4),
+      priorCompletedEligibleCounts: {DateTime(2026, 7, 4): 2},
+      priorCreatedTaskCounts: {DateTime(2026, 7, 4): 3},
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      ListMonsterApp(
+        taskSystemController: controller,
+        openedAt: DateTime(2026, 7, 5, 9),
+      ),
+    );
+    await tester.pump();
+
+    expect(controller.latestDailySummary?.eventName, 'daily_task_summary');
+    expect(controller.latestDailySummary?.completedEligibleTaskCount, 2);
+    expect(controller.todayXp, 0);
+    expect(controller.xpLedger, isEmpty);
+    expect(find.textContaining('昨天你完成了 2'), findsOneWidget);
+  });
+
+  test('node 5 controller shows previous-day feedback without XP', () {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 5),
+      now: DateTime(2026, 7, 5, 9),
+      lastOpenedDate: DateTime(2026, 7, 4),
+      priorCompletedEligibleCounts: {DateTime(2026, 7, 4): 3},
+      priorCreatedTaskCounts: {DateTime(2026, 7, 4): 4},
+    );
+
+    final summary = controller.recordAppOpened(DateTime(2026, 7, 5, 9));
+
+    expect(summary?.eventName, 'daily_task_summary');
+    expect(controller.todayXp, 0);
+    expect(controller.xpLedger, isEmpty);
+    expect(controller.latestDailySummary?.completedEligibleTaskCount, 3);
+  });
+
+  test('node 5 previous-day zero completions is silent and grants no XP', () {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 5),
+      now: DateTime(2026, 7, 5, 9),
+      lastOpenedDate: DateTime(2026, 7, 4),
+      priorCompletedEligibleCounts: {DateTime(2026, 7, 4): 0},
+      priorCreatedTaskCounts: {DateTime(2026, 7, 4): 2},
+    );
+
+    final summary = controller.recordAppOpened(DateTime(2026, 7, 5, 9));
+
+    expect(summary, isNull);
+    expect(controller.latestDailySummary, isNull);
+    expect(controller.events.whereType<DailyTaskSummary>(), isEmpty);
+    expect(controller.todayXp, 0);
+    expect(controller.xpLedger, isEmpty);
+    expect(controller.monster.moodState, MonsterMood.idle);
+  });
+
+  test('node 5 long-term achievement grants uncapped XP only once', () {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 4),
+      now: DateTime(2026, 7, 4, 9),
+    );
+
+    for (var index = 0; index < 130; index++) {
+      controller.createTask('封顶任务 $index');
+      controller.completeTask(controller.tasks.last.id);
+    }
+    expect(controller.todayXp, XpPolicy.dailyFormalXpCap);
+
+    controller.createLongTermTask(
+      '两天训练',
+      childTaskTitles: const ['第一天训练', '第二天训练'],
+    );
+    final longTermTaskId = controller.longTermTasks.single.longTermTaskId;
+
+    for (final task in controller.longTermChildTasks(longTermTaskId).toList()) {
+      controller.completeTask(task.id);
+    }
+
+    final firstLongTermEntries = controller.xpLedger
+        .where((entry) => entry.sourceType == XpSourceType.longtermAchieved)
+        .toList();
+    expect(firstLongTermEntries, hasLength(1));
+    expect(firstLongTermEntries.single.amount, XpPolicy.longTermAchievedXp);
+    expect(firstLongTermEntries.single.dailyCapApplied, isFalse);
+    expect(controller.todayXp, XpPolicy.dailyFormalXpCap);
+
+    final firstChildId = controller.longTermChildTasks(longTermTaskId).first.id;
+    controller.undoCompletion(firstChildId);
+    controller.completeTask(firstChildId);
+
+    final finalLongTermEntries = controller.xpLedger
+        .where((entry) => entry.sourceType == XpSourceType.longtermAchieved)
+        .toList();
+    expect(finalLongTermEntries, hasLength(1));
+  });
+
+  test('node 5 duplicate sourceEventId does not grant XP twice', () {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 4),
+      now: DateTime(2026, 7, 4, 9),
+    );
+
+    final firstGrant = controller.grantXpForTesting(
+      sourceEventId: 'evt_duplicate',
+      sourceType: XpSourceType.taskCompleted,
+      rawAmount: 10,
+    );
+    final duplicateGrant = controller.grantXpForTesting(
+      sourceEventId: 'evt_duplicate',
+      sourceType: XpSourceType.taskCompleted,
+      rawAmount: 10,
+    );
+
+    expect(firstGrant, isNotNull);
+    expect(duplicateGrant, isNull);
+    expect(controller.todayXp, 10);
+    expect(controller.xpLedger, hasLength(1));
+  });
+
+  test('node 5 undo completion reverts XP only once', () {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 4),
+      now: DateTime(2026, 7, 4, 9),
+    );
+
+    controller.createTask('撤销测试');
+    final taskId = controller.tasks.single.id;
+    controller.completeTask(taskId);
+    controller.undoCompletion(taskId);
+    controller.undoCompletion(taskId);
+
+    expect(
+      controller.xpLedger.where(
+        (entry) => entry.sourceType == XpSourceType.xpReverted,
+      ),
+      hasLength(1),
+    );
+    expect(controller.todayXp, 0);
+  });
+
+  test('node 5 onboarding auto completion grants no formal XP', () {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 4),
+      now: DateTime(2026, 7, 4, 9),
+    );
+
+    controller.createTask('引导任务');
+    controller.completeTask(
+      controller.tasks.single.id,
+      completionSource: CompletionSource.onboardingAuto,
+    );
+
+    expect(controller.tasks.single.isCompleted, isTrue);
+    expect(controller.todayXp, 0);
+    expect(controller.xpLedger, isEmpty);
+    expect(controller.activeDayCount, 0);
+    expect(controller.latestMilestone, isNull);
+  });
+
+  test('node 5 controller wakes sleeping monster on the third pet', () {
+    final controller = TaskSystemController(
+      today: DateTime(2026, 7, 4),
+      now: DateTime(2026, 7, 4, 23, 30),
+    );
+
+    expect(controller.monster.moodState, MonsterMood.sleeping);
+
+    controller.petMonster(interactedAt: DateTime(2026, 7, 4, 23, 31));
+    controller.petMonster(interactedAt: DateTime(2026, 7, 4, 23, 32));
+    expect(controller.monster.moodState, MonsterMood.sleeping);
+    expect(controller.sleepPetCount, 2);
+    expect(controller.todayXp, 0);
+
+    final reaction = controller.petMonster(
+      interactedAt: DateTime(2026, 7, 4, 23, 33),
+    );
+
+    expect(reaction.reactionKey, 'wake_up');
+    expect(controller.monster.currentAction, 'wake_up');
+    expect(controller.monster.moodState, isNot(MonsterMood.sleeping));
+    expect(controller.todayXp, 0);
+    expect(controller.xpLedger, isEmpty);
+  });
+
   test('node 4 controller restores tasks without granting XP', () {
     final controller = TaskSystemController(today: DateTime(2026, 7, 4));
 
@@ -123,6 +393,8 @@ void main() {
     expect(controller.todayXp, 0);
     expect(controller.tasks.single.status, TaskStatus.active);
     expect(controller.xpLedger.last.eventName, 'xp_reverted');
+    expect(controller.xpLedger.last.payload['originalXpLedgerId'], 'xp_1');
+    expect(controller.xpLedger.last.payload['reason'], 'undo_completion');
 
     controller.cancelTask(taskId);
     expect(controller.tasks.single.status, TaskStatus.cancelled);

@@ -116,6 +116,10 @@ class AppStrings {
     '只记录提醒计划，不调度系统通知',
     'Records the reminder plan without scheduling system notifications.',
   );
+  String get highPriorityTask => pick('高优先级任务', 'High priority task');
+  String get highPriorityTaskHint =>
+      pick('当日第 1-5 个可奖励任务给 +15 XP', '+15 XP for the first 5 rewardable tasks');
+  String get highPriorityShort => pick('高优先级', 'High priority');
   String get reminderTime => pick('提醒时间', 'Reminder time');
   String get invalidReminderTime =>
       pick('请输入 00:00-23:59', 'Enter 00:00-23:59');
@@ -269,6 +273,38 @@ class AppStrings {
   String get repeatPlaceholderShort => pick('重复占位', 'Repeat placeholder');
   String get longTermChild => pick('长期拆解', 'Long-term step');
   String get clear => pick('清除', 'Clear');
+  String todayXpCap(int xp) => pick(
+    '今日 XP $xp/${XpPolicy.dailyFormalXpCap}',
+    'Today XP $xp/${XpPolicy.dailyFormalXpCap}',
+  );
+  String streakDays(int days) => pick('连续 $days 天', '$days-day streak');
+  String get streakNeutralHint => pick(
+    '中断也不会扣经验，今天重新开始也很好。',
+    'Breaks never remove XP. Starting again today is okay.',
+  );
+  String dailySummaryTitle(DailyTaskSummary summary) {
+    if (language == AppLanguage.zh) {
+      return summary.feedbackText;
+    }
+    return 'Yesterday you completed ${summary.completedEligibleTaskCount} task(s). Xiaodan remembered.';
+  }
+
+  String cumulativeRewardTitle(CumulativeActiveRewardEvent reward) => pick(
+    '累计 ${reward.activeDayCount} 天完成任务，奖励 +${reward.xpAmount} XP',
+    '${reward.activeDayCount} active days, +${reward.xpAmount} XP reward',
+  );
+  String get petMonster => pick('摸摸小单', 'Pet Xiaodan');
+  String sleepPetProgress(int count, int threshold) =>
+      pick('睡梦中 $count/$threshold', 'Sleeping $count/$threshold');
+  String petReaction(MonsterPetReactionEvent reaction) {
+    if (reaction.reactionKey == 'wake_up') {
+      return pick('小单慢慢醒来了', 'Xiaodan is waking up');
+    }
+    if (reaction.touchCountInSleep > 0) {
+      return pick('小单翻了个身，继续睡', 'Xiaodan turns over and keeps sleeping');
+    }
+    return pick('小单蹭了蹭你的手', 'Xiaodan leans into your hand');
+  }
 
   String milestoneTitle(DailyTaskMilestone milestone) {
     if (language == AppLanguage.zh) {
@@ -290,7 +326,10 @@ class AppStrings {
 }
 
 class ListMonsterApp extends StatefulWidget {
-  const ListMonsterApp({super.key});
+  const ListMonsterApp({super.key, this.taskSystemController, this.openedAt});
+
+  final TaskSystemController? taskSystemController;
+  final DateTime? openedAt;
 
   @override
   State<ListMonsterApp> createState() => _ListMonsterAppState();
@@ -341,14 +380,20 @@ class _ListMonsterAppState extends State<ListMonsterApp> {
           GlobalWidgetsLocalizations.delegate,
         ],
         theme: ListMonsterTheme.light(),
-        home: const ListMonsterShell(),
+        home: ListMonsterShell(
+          taskSystemController: widget.taskSystemController,
+          openedAt: widget.openedAt,
+        ),
       ),
     );
   }
 }
 
 class ListMonsterShell extends StatefulWidget {
-  const ListMonsterShell({super.key});
+  const ListMonsterShell({super.key, this.taskSystemController, this.openedAt});
+
+  final TaskSystemController? taskSystemController;
+  final DateTime? openedAt;
 
   @override
   State<ListMonsterShell> createState() => _ListMonsterShellState();
@@ -357,16 +402,21 @@ class ListMonsterShell extends StatefulWidget {
 class _ListMonsterShellState extends State<ListMonsterShell> {
   int _tabIndex = 0;
   late final TaskSystemController _taskSystem;
+  late final bool _ownsTaskSystem;
 
   @override
   void initState() {
     super.initState();
-    _taskSystem = TaskSystemController();
+    _taskSystem = widget.taskSystemController ?? TaskSystemController();
+    _ownsTaskSystem = widget.taskSystemController == null;
+    _taskSystem.recordAppOpened(widget.openedAt ?? DateTime.now());
   }
 
   @override
   void dispose() {
-    _taskSystem.dispose();
+    if (_ownsTaskSystem) {
+      _taskSystem.dispose();
+    }
     super.dispose();
   }
 
@@ -451,6 +501,7 @@ class _TodayTabState extends State<TodayTab> {
   );
   bool _withTaskReminder = false;
   bool _withRepeatPlaceholder = false;
+  bool _withHighPriority = false;
   String? _reminderTimeError;
 
   @override
@@ -506,10 +557,13 @@ class _TodayTabState extends State<TodayTab> {
               ),
               const SizedBox(height: 12),
               _NewTaskOptions(
+                highPriorityEnabled: _withHighPriority,
                 reminderEnabled: _withTaskReminder,
                 repeatEnabled: _withRepeatPlaceholder,
                 reminderTimeController: _reminderTimeController,
                 reminderTimeError: _reminderTimeError,
+                onHighPriorityChanged: (value) =>
+                    setState(() => _withHighPriority = value),
                 onReminderEnabledChanged: (value) {
                   setState(() {
                     _withTaskReminder = value;
@@ -557,6 +611,16 @@ class _TodayTabState extends State<TodayTab> {
                 const SizedBox(height: 20),
                 _MilestoneCard(milestone: milestone),
               ],
+              if (controller.latestDailySummary != null) ...[
+                const SizedBox(height: 12),
+                _DailySummaryCard(summary: controller.latestDailySummary!),
+              ],
+              if (controller.latestCumulativeReward != null) ...[
+                const SizedBox(height: 12),
+                _CumulativeRewardCard(
+                  reward: controller.latestCumulativeReward!,
+                ),
+              ],
               const SizedBox(height: 24),
               _TodayCleanupActions(controller: controller),
               const SizedBox(height: 16),
@@ -588,6 +652,7 @@ class _TodayTabState extends State<TodayTab> {
 
     widget.controller.createTask(
       _titleController.text,
+      priority: _withHighPriority ? TaskPriority.high : TaskPriority.none,
       reminderTime: reminderTime,
       repeatRuleId: _withRepeatPlaceholder
           ? TaskSystemController.repeatPlaceholderRuleId
@@ -599,19 +664,23 @@ class _TodayTabState extends State<TodayTab> {
 
 class _NewTaskOptions extends StatelessWidget {
   const _NewTaskOptions({
+    required this.highPriorityEnabled,
     required this.reminderEnabled,
     required this.repeatEnabled,
     required this.reminderTimeController,
     required this.reminderTimeError,
+    required this.onHighPriorityChanged,
     required this.onReminderEnabledChanged,
     required this.onRepeatChanged,
     required this.onReminderTimeChanged,
   });
 
+  final bool highPriorityEnabled;
   final bool reminderEnabled;
   final bool repeatEnabled;
   final TextEditingController reminderTimeController;
   final String? reminderTimeError;
+  final ValueChanged<bool> onHighPriorityChanged;
   final ValueChanged<bool> onReminderEnabledChanged;
   final ValueChanged<bool> onRepeatChanged;
   final ValueChanged<String> onReminderTimeChanged;
@@ -638,6 +707,14 @@ class _NewTaskOptions extends StatelessWidget {
             const SizedBox(height: 4),
             Text(strings.newTaskOptionsHint),
             const SizedBox(height: 8),
+            SwitchListTile(
+              value: highPriorityEnabled,
+              onChanged: onHighPriorityChanged,
+              title: Text(strings.highPriorityTask),
+              subtitle: Text(strings.highPriorityTaskHint),
+              secondary: const Icon(Icons.priority_high_outlined),
+              contentPadding: EdgeInsets.zero,
+            ),
             SwitchListTile(
               value: repeatEnabled,
               onChanged: onRepeatChanged,
@@ -1349,6 +1426,12 @@ class _MonsterStatusStrip extends StatelessWidget {
                   '${strings.completedPrefix} ${controller.completedRewardableCount}',
                 ),
               ),
+              Chip(label: Text(strings.todayXpCap(controller.todayXp))),
+              Chip(
+                label: Text(
+                  strings.streakDays(controller.streak.currentStreakDays),
+                ),
+              ),
             ],
           ),
         ),
@@ -1454,6 +1537,9 @@ class _TaskTile extends StatelessWidget {
     }
     if (task.repeatRuleId != null) {
       parts.add(strings.repeatPlaceholderShort);
+    }
+    if (task.priority == TaskPriority.high) {
+      parts.add(strings.highPriorityShort);
     }
     if (task.parentLongTermTaskId != null) {
       parts.add(strings.longTermChild);
@@ -1573,6 +1659,63 @@ class _MilestoneCard extends StatelessWidget {
   }
 }
 
+class _DailySummaryCard extends StatelessWidget {
+  const _DailySummaryCard({required this.summary});
+
+  final DailyTaskSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return _FeedbackCard(
+      icon: Icons.history_toggle_off_outlined,
+      text: context.s.dailySummaryTitle(summary),
+    );
+  }
+}
+
+class _CumulativeRewardCard extends StatelessWidget {
+  const _CumulativeRewardCard({required this.reward});
+
+  final CumulativeActiveRewardEvent reward;
+
+  @override
+  Widget build(BuildContext context) {
+    return _FeedbackCard(
+      icon: Icons.local_fire_department_outlined,
+      text: context.s.cumulativeRewardTitle(reward),
+    );
+  }
+}
+
+class _FeedbackCard extends StatelessWidget {
+  const _FeedbackCard({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class MonsterTab extends StatelessWidget {
   const MonsterTab({super.key, required this.controller});
 
@@ -1607,6 +1750,40 @@ class MonsterTab extends StatelessWidget {
             Text(strings.levelLine(monster)),
             const SizedBox(height: 8),
             Text('${monster.currentLevelXp} / ${monster.xpToNextLevel} XP'),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(label: Text(strings.todayXpCap(controller.todayXp))),
+                Chip(
+                  label: Text(
+                    strings.streakDays(controller.streak.currentStreakDays),
+                  ),
+                ),
+                if (monster.moodState == MonsterMood.sleeping)
+                  Chip(
+                    label: Text(
+                      strings.sleepPetProgress(
+                        controller.sleepPetCount,
+                        monster.wakeUpThreshold,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => controller.petMonster(),
+              icon: const Icon(Icons.touch_app_outlined),
+              label: Text(strings.petMonster),
+            ),
+            if (controller.latestPetReaction != null) ...[
+              const SizedBox(height: 12),
+              Text(strings.petReaction(controller.latestPetReaction!)),
+            ],
+            const SizedBox(height: 12),
+            Text(strings.streakNeutralHint),
           ],
         );
       },

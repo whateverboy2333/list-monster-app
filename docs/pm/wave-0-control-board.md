@@ -12,7 +12,9 @@
 
 节点 3：核心闭环 Alpha，已通过 PM 验收并合并入主分支。
 
-节点 4：任务系统 P0 完成，已在分支 `codex/node4-task-system-p0` 实现并通过本机验证，待 PM 验收与合并确认。
+节点 4：任务系统 P0 完成，已通过 PM 验收，作为节点 5 输入基线。
+
+节点 5：怪兽养成与激励 P0 已通过 QA 返工复检与 PM 验收。`QA-N5-001` 最终质检曾裁决为 fail，`FE-N5-001` 已完成返工；`QA-N5-002` 复检裁决为 pass，`flutter test` 33 项通过，相关 analyze 与 domain 测试通过。当前进入提交合并收口。
 
 ## Agent 名册
 
@@ -68,32 +70,7 @@
 
 详见 [node-roadmap-freeze.md](node-roadmap-freeze.md)。
 
-## 当前推进节点：节点 4
-
-节点 4 名称：任务系统 P0 完成。
-
-范围：
-
-```text
-快速创建
-今日视图
-清单分组
-任务完成 / 撤销 / 删除 / 恢复
-长期任务拆解
-无压清理
-重复规则基础能力
-提醒意图
-```
-
-关键验收：
-
-1. 取消 / 放下不产生 XP。
-2. `task_restored` 能正确恢复任务。
-3. 长期任务不能直接完成，只能由拆解任务汇总达成。
-
-节点 4 交付摘要详见 [node-4-task-system-p0-summary.md](node-4-task-system-p0-summary.md)。
-
-## 当前待启动节点：节点 5
+## 当前推进节点：节点 5
 
 节点 5 名称：怪兽养成与激励 P0 完成。
 
@@ -115,6 +92,31 @@ streak_break
 关键验收：
 
 所有成长都来自真实任务行为，不能被抚摸、打开 App、教学任务刷 XP。
+
+节点 5 交付摘要详见 [node-5-growth-p0-summary.md](node-5-growth-p0-summary.md)。
+
+## 当前待启动节点：节点 6
+
+节点 6 名称：账号 / 同步 / 通知 / 陪伴场域。
+
+范围：
+
+```text
+游客模式
+登录
+游客数据合并确认
+云同步
+本地通知
+勿扰时段
+15 天注销冷静期
+PC 第二窗口桌宠
+Android Glance Widget
+CompanionSnapshot
+```
+
+关键验收：
+
+桌宠和 Widget 只读统一快照，不自己计算任务、XP、Streak。
 
 ## 进入代码开发前准入门槛
 

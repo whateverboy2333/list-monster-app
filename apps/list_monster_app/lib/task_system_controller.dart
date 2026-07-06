@@ -7,13 +7,39 @@ enum LongTermBreakdownSource { manual, ai }
 class TaskSystemController extends ChangeNotifier {
   TaskSystemController({
     DateTime? today,
+    DateTime? now,
+    DateTime? lastOpenedDate,
+    Iterable<DateTime> priorActiveDates = const [],
+    Map<DateTime, int> priorCompletedEligibleCounts = const <DateTime, int>{},
+    Map<DateTime, int> priorCreatedTaskCounts = const <DateTime, int>{},
     this.userId = 'local_guest',
     this.timezoneId = 'Asia/Shanghai',
   }) : today = _dateOnly(today ?? DateTime.now()),
+       _fixedNow = now,
+       _lastOpenedDate = lastOpenedDate == null
+           ? null
+           : _dateOnly(lastOpenedDate),
        monster = MonsterSnapshot.initialEgg(
          monsterId: 'monster_local_egg',
          userId: userId,
        ) {
+    _streak = StreakSnapshot.empty(timezoneId: timezoneId);
+    for (final date in priorActiveDates) {
+      final key = _formatDateKey(_dateOnly(date));
+      _seedCompletedEligibleCounts[key] =
+          (_seedCompletedEligibleCounts[key] ?? 0) + 1;
+    }
+    for (final entry in priorCompletedEligibleCounts.entries) {
+      final key = _formatDateKey(_dateOnly(entry.key));
+      _seedCompletedEligibleCounts[key] =
+          (_seedCompletedEligibleCounts[key] ?? 0) + entry.value;
+    }
+    for (final entry in priorCreatedTaskCounts.entries) {
+      final key = _formatDateKey(_dateOnly(entry.key));
+      _seedCreatedTaskCounts[key] =
+          (_seedCreatedTaskCounts[key] ?? 0) + entry.value;
+    }
+    _rebuildStreakFromActivity();
     _taskLists.add(TaskList.systemInbox(userId: userId));
     _taskLists.add(
       TaskList(
@@ -27,6 +53,7 @@ class TaskSystemController extends ChangeNotifier {
         isSystem: false,
       ),
     );
+    _syncMonsterMood(actionKey: monster.currentAction);
   }
 
   static const repeatPlaceholderRuleId = 'repeat_placeholder';
@@ -34,6 +61,7 @@ class TaskSystemController extends ChangeNotifier {
   final String userId;
   final String timezoneId;
   final DateTime today;
+  final DateTime? _fixedNow;
   MonsterSnapshot monster;
 
   final List<TaskItem> _tasks = [];
@@ -42,6 +70,12 @@ class TaskSystemController extends ChangeNotifier {
   final List<ReminderIntent> _reminderIntents = [];
   final List<XpLedgerEntry> _xpLedger = [];
   final List<Object> _events = [];
+  final Map<String, int> _seedCompletedEligibleCounts = {};
+  final Map<String, int> _seedCreatedTaskCounts = {};
+  final Set<int> _grantedCumulativeRewardThresholds = {};
+  final Set<String> _shownMilestoneKeys = {};
+  final Set<String> _summaryGeneratedDateKeys = {};
+  final Set<String> _longTermRewardedTaskIds = {};
   List<String> _lastBatchCleanupTaskIds = const [];
 
   int _nextTaskNumber = 1;
@@ -52,6 +86,14 @@ class TaskSystemController extends ChangeNotifier {
   int _nextBatchNumber = 1;
   int _todayXp = 0;
   DailyTaskMilestone? _latestMilestone;
+  DailyTaskSummary? _latestDailySummary;
+  CumulativeActiveRewardEvent? _latestCumulativeReward;
+  MonsterPetReactionEvent? _latestPetReaction;
+  late StreakSnapshot _streak;
+  DateTime? _lastOpenedDate;
+  DateTime? _wakeOverrideUntil;
+  bool _missingActive = false;
+  int _sleepPetCount = 0;
 
   List<TaskItem> get tasks => List.unmodifiable(_tasks);
   List<TaskItem> get todayTasks {
@@ -99,16 +141,30 @@ class TaskSystemController extends ChangeNotifier {
   List<Object> get events => List.unmodifiable(_events);
 
   int get completedRewardableCount {
-    return _tasks
-        .where((task) => task.isCompleted && task.rewardEligible)
-        .length;
+    return _tasks.where(_isFormalCompletedTask).length;
   }
 
   int get todayXp => _todayXp;
   DailyTaskMilestone? get latestMilestone => _latestMilestone;
+  DailyTaskSummary? get latestDailySummary => _latestDailySummary;
+  CumulativeActiveRewardEvent? get latestCumulativeReward =>
+      _latestCumulativeReward;
+  MonsterPetReactionEvent? get latestPetReaction => _latestPetReaction;
+  StreakSnapshot get streak => _streak;
+  int get sleepPetCount => _sleepPetCount;
+  int get activeDayCount => _activeDateKeys().length;
   bool get hasTasks => _tasks.isNotEmpty;
 
   String get monsterActionLabel {
+    if (monster.currentAction == 'wake_up') {
+      return '慢慢醒来';
+    }
+    if (monster.moodState == MonsterMood.sleeping) {
+      return '睡觉中';
+    }
+    if (monster.moodState == MonsterMood.missing) {
+      return '想念你';
+    }
     if (_tasks.isEmpty) {
       return '获得怪兽蛋';
     }
@@ -127,6 +183,91 @@ class TaskSystemController extends ChangeNotifier {
           (task) => task.listId == listId && task.status != TaskStatus.deleted,
         )
         .length;
+  }
+
+  int completedRewardableCountForDate(DateTime localDate) {
+    final key = _formatDateKey(_dateOnly(localDate));
+    final seedCount = _seedCompletedEligibleCounts[key] ?? 0;
+    final taskCount = _tasks.where((task) {
+      if (!_isFormalCompletedTask(task) || task.completedAt == null) {
+        return false;
+      }
+      return _isSameDate(task.completedAt!, localDate);
+    }).length;
+    return seedCount + taskCount;
+  }
+
+  DailyTaskSummary? recordAppOpened(DateTime openedAt) {
+    final openedLocalDate = _dateOnly(openedAt);
+    final previousDate = openedLocalDate.subtract(const Duration(days: 1));
+    if (_lastOpenedDate != null &&
+        openedLocalDate.difference(_lastOpenedDate!).inDays > 3) {
+      _missingActive = true;
+    }
+    _lastOpenedDate = openedLocalDate;
+
+    final summaryKey = _formatDateKey(previousDate);
+    DailyTaskSummary? summary;
+    if (_summaryGeneratedDateKeys.add(summaryKey)) {
+      final completedCount = completedRewardableCountForDate(previousDate);
+      if (completedCount > 0) {
+        summary = DailyTaskSummary(
+          summaryForDate: previousDate,
+          timezoneId: timezoneId,
+          completedEligibleTaskCount: completedCount,
+          createdTaskCount: _createdTaskCountForDate(previousDate),
+          feedbackText: '昨天你完成了 $completedCount 件小事，小单都记得。',
+        );
+        _latestDailySummary = summary;
+        _events.add(summary);
+      }
+    }
+
+    _syncMonsterMood(actionKey: _missingActive ? 'missing' : null);
+    notifyListeners();
+    return summary;
+  }
+
+  MonsterPetReactionEvent petMonster({DateTime? interactedAt}) {
+    final now = interactedAt ?? _now();
+    final sleeping =
+        monster.moodState == MonsterMood.sleeping ||
+        (_isSleepingAt(now) && !_isWakeOverrideActive(now));
+    if (!sleeping) {
+      final reaction = MonsterPetReactionEvent(
+        monsterId: monster.monsterId,
+        reactionKey: 'pet_01',
+        touchCountInSleep: 0,
+        interactedAt: now,
+      );
+      _latestPetReaction = reaction;
+      _events.add(reaction);
+      _syncMonsterMood(actionKey: 'pet_01');
+      notifyListeners();
+      return reaction;
+    }
+
+    _sleepPetCount += 1;
+    final shouldWake = _sleepPetCount >= monster.wakeUpThreshold;
+    final sleepReactionKey = _sleepPetCount == 1 ? 'pet_01' : 'pet_02';
+    final reaction = MonsterPetReactionEvent(
+      monsterId: monster.monsterId,
+      reactionKey: shouldWake ? 'wake_up' : sleepReactionKey,
+      touchCountInSleep: _sleepPetCount,
+      interactedAt: now,
+    );
+    _latestPetReaction = reaction;
+    _events.add(reaction);
+
+    if (shouldWake) {
+      _wakeOverrideUntil = now.add(const Duration(minutes: 10));
+      _sleepPetCount = 0;
+      _syncMonsterMood(actionKey: 'wake_up');
+    } else {
+      _syncMonsterMood(actionKey: 'sleep');
+    }
+    notifyListeners();
+    return reaction;
   }
 
   void createTask(
@@ -167,8 +308,9 @@ class TaskSystemController extends ChangeNotifier {
     );
     _tasks.add(task);
     _events.add(
-      task.toCreatedEvent(eventId: _nextEventId(), createdAt: DateTime.now()),
+      task.toCreatedEvent(eventId: _nextEventId(), createdAt: _now()),
     );
+    _incrementCreatedTaskCount(today);
 
     if (effectiveReminderTime != null && reminderId != null) {
       final reminder = ReminderIntent.localTime(
@@ -235,35 +377,61 @@ class TaskSystemController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void completeTask(String taskId) {
+  void completeTask(
+    String taskId, {
+    CompletionSource completionSource = CompletionSource.userAction,
+  }) {
     final index = _tasks.indexWhere((task) => task.id == taskId);
     if (index == -1 || _tasks[index].isCompleted) {
       return;
     }
 
     final task = _tasks[index];
+    final completedAt = _now();
+    final completedLocalDate = _dateOnly(completedAt);
+    final isFormalCompletion =
+        task.rewardEligible &&
+        completionSource != CompletionSource.onboardingAuto;
     final nextRewardableCount =
-        completedRewardableCount + (task.rewardEligible ? 1 : 0);
+        completedRewardableCountForDate(completedLocalDate) +
+        (isFormalCompletion ? 1 : 0);
     final nextTodayCompletedCount =
-        _tasks.where((item) => item.isCompleted).length + 1;
+        _tasks
+            .where(
+              (item) =>
+                  item.isCompleted &&
+                  item.completedAt != null &&
+                  _isSameDate(item.completedAt!, completedLocalDate),
+            )
+            .length +
+        1;
 
     final result = task.complete(
       eventId: _nextEventId(),
-      completedAt: DateTime.now(),
+      completedAt: completedAt,
       timezoneId: timezoneId,
       completionOrderOfDay: nextRewardableCount,
       dailyRewardableCountAfter: nextRewardableCount,
       dailyTodayTaskCountAfter: nextTodayCompletedCount,
+      completionSource: completionSource,
     );
 
     _tasks[index] = result.task;
     _events.add(result.event);
 
-    if (result.event.rewardEligible) {
+    if (isFormalCompletion) {
       _grantTaskCompletionXp(result.event);
+      _recordActiveDay(result.event.completedLocalDate);
+      _maybeGrantCumulativeActiveReward(result.event.completedLocalDate);
     }
     _refreshLongTermProgress(result.task.parentLongTermTaskId);
     _refreshMilestone();
+    _missingActive = false;
+    _syncMonsterMood(
+      actionKey: isFormalCompletion
+          ? (monster.currentAction == 'level_up' ? 'level_up' : 'eat')
+          : null,
+    );
 
     notifyListeners();
   }
@@ -283,15 +451,21 @@ class TaskSystemController extends ChangeNotifier {
 
     final result = _tasks[index].undoCompletion(
       eventId: _nextEventId(),
-      undoneAt: DateTime.now(),
+      undoneAt: _now(),
       thresholdReverted: thresholdReverted,
     );
 
     _tasks[index] = result.task;
     _events.add(result.event);
-    _revertXpForCompletion(result.event.originalCompletedEventId);
+    _revertXpForCompletion(
+      result.event.originalCompletedEventId,
+      revertEventId: result.event.eventId,
+      revertedAt: result.event.undoneAt,
+    );
+    _rebuildStreakFromActivity();
     _refreshLongTermProgress(result.task.parentLongTermTaskId);
     _refreshMilestone();
+    _syncMonsterMood();
 
     notifyListeners();
   }
@@ -304,11 +478,12 @@ class TaskSystemController extends ChangeNotifier {
 
     final result = _tasks[index].cancel(
       eventId: _nextEventId(),
-      cancelledAt: DateTime.now(),
+      cancelledAt: _now(),
       cancelReason: cancelReason,
     );
     _tasks[index] = result.task;
     _events.add(result.event);
+    _syncMonsterMood();
 
     notifyListeners();
   }
@@ -321,11 +496,12 @@ class TaskSystemController extends ChangeNotifier {
 
     final result = _tasks[index].delete(
       eventId: _nextEventId(),
-      deletedAt: DateTime.now(),
+      deletedAt: _now(),
       deleteReason: deleteReason,
     );
     _tasks[index] = result.task;
     _events.add(result.event);
+    _syncMonsterMood();
 
     notifyListeners();
   }
@@ -343,12 +519,13 @@ class TaskSystemController extends ChangeNotifier {
 
     final result = task.restore(
       eventId: _nextEventId(),
-      restoredAt: DateTime.now(),
+      restoredAt: _now(),
       restoreReason: restoreReason,
       restoredFromEventId: 'local_restore',
     );
     _tasks[index] = result.task;
     _events.add(result.event);
+    _syncMonsterMood();
 
     notifyListeners();
   }
@@ -368,7 +545,7 @@ class TaskSystemController extends ChangeNotifier {
         batchId: 'batch_${_nextBatchNumber++}',
         action: BatchCleanupAction.letGo,
         affectedTaskIds: cleanupTargets,
-        appliedAt: DateTime.now(),
+        appliedAt: _now(),
       ),
     );
     notifyListeners();
@@ -506,7 +683,7 @@ class TaskSystemController extends ChangeNotifier {
       if (!stillInRange && task.status == TaskStatus.active) {
         final result = task.cancel(
           eventId: _nextEventId(),
-          cancelledAt: DateTime.now(),
+          cancelledAt: _now(),
           cancelReason: 'longterm_date_changed',
         );
         _tasks[index] = result.task;
@@ -589,7 +766,7 @@ class TaskSystemController extends ChangeNotifier {
 
     final result = _longTermTasks[index].cancel(
       eventId: _nextEventId(),
-      cancelledAt: DateTime.now(),
+      cancelledAt: _now(),
       cancelReason: 'let_go',
     );
     _longTermTasks[index] = result.task;
@@ -623,33 +800,40 @@ class TaskSystemController extends ChangeNotifier {
   }
 
   void _grantTaskCompletionXp(TaskCompletedEvent event) {
+    if (event.completionSource == CompletionSource.onboardingAuto) {
+      return;
+    }
     final xpAmount = XpPolicy.taskCompletionXp(
       completionOrderOfDay: event.completionOrderOfDay,
       highPriority: event.priority == TaskPriority.high,
     );
-    final nextTodayXp = _todayXp + xpAmount;
-    final ledgerEntry = XpLedgerEntry(
-      xpLedgerId: 'xp_${_nextXpLedgerNumber++}',
-      userId: userId,
+    _grantXp(
       sourceEventId: event.eventId,
       sourceType: XpSourceType.taskCompleted,
-      amount: xpAmount,
-      localDate: today,
-      timezoneId: timezoneId,
+      rawAmount: xpAmount,
+      localDate: event.completedLocalDate,
       dailyCapApplied: true,
-      dailyTotalAfterGrant: nextTodayXp,
       createdAt: event.completedAt,
     );
-    _xpLedger.add(ledgerEntry);
-    _todayXp = nextTodayXp;
-    _rebuildMonsterFromXp();
   }
 
-  void _revertXpForCompletion(String originalCompletedEventId) {
+  void _revertXpForCompletion(
+    String originalCompletedEventId, {
+    required String revertEventId,
+    required DateTime revertedAt,
+  }) {
     final original = _xpLedger
         .where((entry) => entry.sourceEventId == originalCompletedEventId)
         .firstOrNull;
     if (original == null || original.amount <= 0) {
+      return;
+    }
+    final alreadyReverted = _xpLedger.any(
+      (entry) =>
+          entry.sourceType == XpSourceType.xpReverted &&
+          entry.originalXpLedgerId == original.xpLedgerId,
+    );
+    if (alreadyReverted) {
       return;
     }
 
@@ -658,23 +842,94 @@ class TaskSystemController extends ChangeNotifier {
       XpLedgerEntry(
         xpLedgerId: 'xp_${_nextXpLedgerNumber++}',
         userId: userId,
-        sourceEventId: _nextEventId(),
+        sourceEventId: revertEventId,
         sourceType: XpSourceType.xpReverted,
         originalXpLedgerId: original.xpLedgerId,
         amount: -original.amount,
-        localDate: today,
+        localDate: original.localDate,
         timezoneId: timezoneId,
         dailyCapApplied: true,
         dailyTotalAfterGrant: nextTodayXp,
         reason: 'undo_completion',
-        createdAt: DateTime.now(),
+        createdAt: revertedAt,
       ),
     );
     _todayXp = nextTodayXp;
     _rebuildMonsterFromXp();
   }
 
-  void _rebuildMonsterFromXp() {
+  XpLedgerEntry? _grantXp({
+    required String sourceEventId,
+    required XpSourceType sourceType,
+    required int rawAmount,
+    required DateTime localDate,
+    required bool dailyCapApplied,
+    required DateTime createdAt,
+    String? reason,
+  }) {
+    final alreadyGranted = _xpLedger.any(
+      (entry) =>
+          entry.sourceType != XpSourceType.xpReverted &&
+          entry.sourceEventId == sourceEventId,
+    );
+    if (alreadyGranted) {
+      return null;
+    }
+
+    final amount = dailyCapApplied
+        ? XpPolicy.capFormalXp(currentDailyXp: _todayXp, rawAmount: rawAmount)
+        : rawAmount;
+    final nextTodayXp = dailyCapApplied ? _todayXp + amount : _todayXp;
+    final ledgerEntry = XpLedgerEntry(
+      xpLedgerId: 'xp_${_nextXpLedgerNumber++}',
+      userId: userId,
+      sourceEventId: sourceEventId,
+      sourceType: sourceType,
+      amount: amount,
+      localDate: _dateOnly(localDate),
+      timezoneId: timezoneId,
+      dailyCapApplied: dailyCapApplied,
+      dailyTotalAfterGrant: nextTodayXp,
+      reason: reason,
+      createdAt: createdAt,
+    );
+    _xpLedger.add(ledgerEntry);
+    _todayXp = nextTodayXp;
+    final beforeLevel = monster.level;
+    _rebuildMonsterFromXp(actionKey: _xpActionKey(sourceType, amount));
+    if (amount > 0 && monster.level > beforeLevel) {
+      _events.add(
+        LevelUpEvent(
+          monsterId: monster.monsterId,
+          fromLevel: beforeLevel,
+          toLevel: monster.level,
+          occurredAt: createdAt,
+        ),
+      );
+      monster = monster.copyWith(currentAction: 'level_up');
+    }
+    return ledgerEntry;
+  }
+
+  @visibleForTesting
+  XpLedgerEntry? grantXpForTesting({
+    required String sourceEventId,
+    required XpSourceType sourceType,
+    required int rawAmount,
+    DateTime? localDate,
+    bool dailyCapApplied = true,
+  }) {
+    return _grantXp(
+      sourceEventId: sourceEventId,
+      sourceType: sourceType,
+      rawAmount: rawAmount,
+      localDate: localDate ?? today,
+      dailyCapApplied: dailyCapApplied,
+      createdAt: _now(),
+    );
+  }
+
+  void _rebuildMonsterFromXp({String? actionKey}) {
     final totalXp = _xpLedger.fold<int>(0, (sum, entry) => sum + entry.amount);
     monster = MonsterSnapshot.initialEgg(
       monsterId: 'monster_local_egg',
@@ -685,6 +940,7 @@ class TaskSystemController extends ChangeNotifier {
         XpGrant(sourceEventId: 'xp_rebuild', amount: totalXp),
       );
     }
+    _syncMonsterMood(actionKey: actionKey ?? monster.currentAction);
   }
 
   void _refreshLongTermProgress(String? longTermTaskId) {
@@ -705,27 +961,195 @@ class TaskSystemController extends ChangeNotifier {
         )
         .map((task) => task.id)
         .toList();
+    final formalCompletedChildIds = _tasks
+        .where(
+          (task) =>
+              task.parentLongTermTaskId == longTermTaskId &&
+              _isFormalCompletedTask(task),
+        )
+        .map((task) => task.id)
+        .toList();
 
     final result = _longTermTasks[index].recordChildCompletion(
       eventId: _nextEventId(),
       completedTaskCount: completedChildIds.length,
-      changedAt: DateTime.now(),
+      changedAt: _now(),
       sourceCompletedTaskIds: completedChildIds,
     );
     _longTermTasks[index] = result.task;
     _events.add(result.progressEvent);
     if (result.achievementEvent != null) {
       _events.add(result.achievementEvent!);
+      if (formalCompletedChildIds.length ==
+              result.achievementEvent!.totalTaskCount &&
+          _longTermRewardedTaskIds.add(longTermTaskId)) {
+        _grantXp(
+          sourceEventId: result.achievementEvent!.eventId,
+          sourceType: XpSourceType.longtermAchieved,
+          rawAmount: XpPolicy.longTermAchievedXp,
+          localDate: today,
+          dailyCapApplied: false,
+          createdAt: result.achievementEvent!.achievedAt,
+        );
+      }
     }
   }
 
   void _refreshMilestone() {
-    _latestMilestone = DailyTaskMilestone.fromCompletedCount(
-      completedEligibleTaskCount: completedRewardableCount,
+    final milestone = DailyTaskMilestone.fromCompletedCount(
+      completedEligibleTaskCount: completedRewardableCountForDate(today),
       localDate: today,
       timezoneId: timezoneId,
     );
+    if (milestone == null) {
+      _latestMilestone = null;
+      return;
+    }
+    final milestoneKey =
+        '${_formatDateKey(milestone.localDate)}:${milestone.milestoneKey}';
+    if (_shownMilestoneKeys.add(milestoneKey)) {
+      _events.add(milestone);
+      _latestMilestone = milestone;
+    } else {
+      _latestMilestone = milestone;
+    }
   }
+
+  void _recordActiveDay(DateTime localDate) {
+    final result = _streak.recordActiveDay(localDate);
+    _streak = result.streak;
+    if (result.breakEvent != null) {
+      _events.add(result.breakEvent!);
+    }
+    if (result.updatedEvent != null) {
+      _events.add(result.updatedEvent!);
+    }
+  }
+
+  void _rebuildStreakFromActivity() {
+    var rebuilt = StreakSnapshot.empty(timezoneId: timezoneId);
+    final dates = _activeDateKeys().map(_parseDateKey).toList()..sort();
+    for (final date in dates) {
+      rebuilt = rebuilt.recordActiveDay(date).streak;
+    }
+    _streak = rebuilt;
+  }
+
+  void _maybeGrantCumulativeActiveReward(DateTime localDate) {
+    final activeDays = activeDayCount;
+    if (activeDays < XpPolicy.cumulativeActiveRewardThreshold ||
+        !_grantedCumulativeRewardThresholds.add(
+          XpPolicy.cumulativeActiveRewardThreshold,
+        )) {
+      return;
+    }
+
+    final rewardEvent = CumulativeActiveRewardEvent(
+      eventId: _nextEventId(),
+      activeDayCount: activeDays,
+      rewardThreshold: XpPolicy.cumulativeActiveRewardThreshold,
+      xpAmount: XpPolicy.cumulativeActiveRewardXp,
+      rewardReason: 'fourth_active_day',
+    );
+    _latestCumulativeReward = rewardEvent;
+    _events.add(rewardEvent);
+    _grantXp(
+      sourceEventId: rewardEvent.eventId,
+      sourceType: XpSourceType.cumulativeActiveReward,
+      rawAmount: rewardEvent.xpAmount,
+      localDate: localDate,
+      dailyCapApplied: true,
+      createdAt: _now(),
+      reason: rewardEvent.rewardReason,
+    );
+  }
+
+  void _incrementCreatedTaskCount(DateTime localDate) {
+    final key = _formatDateKey(_dateOnly(localDate));
+    _seedCreatedTaskCounts[key] = (_seedCreatedTaskCounts[key] ?? 0) + 1;
+  }
+
+  int _createdTaskCountForDate(DateTime localDate) {
+    return _seedCreatedTaskCounts[_formatDateKey(_dateOnly(localDate))] ?? 0;
+  }
+
+  Set<String> _activeDateKeys() {
+    final keys = <String>{};
+    for (final entry in _seedCompletedEligibleCounts.entries) {
+      if (entry.value > 0) {
+        keys.add(entry.key);
+      }
+    }
+    for (final task in _tasks) {
+      if (_isFormalCompletedTask(task) && task.completedAt != null) {
+        keys.add(_formatDateKey(_dateOnly(task.completedAt!)));
+      }
+    }
+    return keys;
+  }
+
+  bool _isFormalCompletedTask(TaskItem task) {
+    return task.isCompleted &&
+        task.rewardEligible &&
+        task.completionSource != CompletionSource.onboardingAuto;
+  }
+
+  void _syncMonsterMood({String? actionKey}) {
+    final now = _now();
+    final mood = _resolveMonsterMood(now);
+    monster = monster.copyWith(
+      moodState: mood,
+      currentAction: actionKey ?? _defaultActionKey(mood),
+      sleepPetCount: _sleepPetCount,
+    );
+  }
+
+  MonsterMood _resolveMonsterMood(DateTime now) {
+    if (_missingActive) {
+      return MonsterMood.missing;
+    }
+    if (_isSleepingAt(now) && !_isWakeOverrideActive(now)) {
+      return MonsterMood.sleeping;
+    }
+    if (activeTasks.isNotEmpty) {
+      return MonsterMood.expecting;
+    }
+    if (completedRewardableCountForDate(today) > 0) {
+      return MonsterMood.energetic;
+    }
+    return MonsterMood.idle;
+  }
+
+  String _defaultActionKey(MonsterMood mood) {
+    return switch (mood) {
+      MonsterMood.idle => 'idle_01',
+      MonsterMood.energetic => 'happy_01',
+      MonsterMood.expecting => 'idle_02',
+      MonsterMood.sleeping => 'sleep',
+      MonsterMood.missing => 'missing',
+    };
+  }
+
+  String? _xpActionKey(XpSourceType sourceType, int amount) {
+    if (amount <= 0) {
+      return null;
+    }
+    return switch (sourceType) {
+      XpSourceType.taskCompleted => 'eat',
+      XpSourceType.longtermAchieved => 'happy_01',
+      XpSourceType.cumulativeActiveReward => 'task_milestone',
+      XpSourceType.xpReverted => null,
+    };
+  }
+
+  bool _isSleepingAt(DateTime value) => value.hour >= 23 || value.hour < 7;
+
+  bool _isWakeOverrideActive(DateTime value) {
+    final wakeOverrideUntil = _wakeOverrideUntil;
+    return wakeOverrideUntil != null && value.isBefore(wakeOverrideUntil);
+  }
+
+  DateTime _now() => _fixedNow ?? DateTime.now();
 
   String _nextEventId() => 'evt_${_nextEventNumber++}';
 }
@@ -759,4 +1183,19 @@ String _formatDateForId(DateTime value) {
   final month = value.month.toString().padLeft(2, '0');
   final day = value.day.toString().padLeft(2, '0');
   return '${value.year}$month$day';
+}
+
+String _formatDateKey(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}-$month-$day';
+}
+
+DateTime _parseDateKey(String value) {
+  final parts = value.split('-');
+  return DateTime(
+    int.parse(parts[0]),
+    int.parse(parts[1]),
+    int.parse(parts[2]),
+  );
 }
