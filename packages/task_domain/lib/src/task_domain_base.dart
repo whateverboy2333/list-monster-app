@@ -4,6 +4,8 @@ enum TaskType { normal, longTermChild }
 
 enum TaskPriority { high, medium, none }
 
+enum NotificationPrivacyMode { private, visible }
+
 enum TaskListType { inbox, custom }
 
 enum TaskDateSource {
@@ -45,6 +47,15 @@ extension TaskPriorityContractName on TaskPriority {
       TaskPriority.high => 'high',
       TaskPriority.medium => 'medium',
       TaskPriority.none => 'none',
+    };
+  }
+}
+
+extension NotificationPrivacyModeContractName on NotificationPrivacyMode {
+  String get contractName {
+    return switch (this) {
+      NotificationPrivacyMode.private => 'private',
+      NotificationPrivacyMode.visible => 'visible',
     };
   }
 }
@@ -842,6 +853,67 @@ class BatchCleanupAppliedEvent {
   final DateTime appliedAt;
 }
 
+class DoNotDisturbWindow {
+  factory DoNotDisturbWindow({
+    required String startTime,
+    required String endTime,
+  }) {
+    final startMinute = _parseTimeOfDay(startTime);
+    final endMinute = _parseTimeOfDay(endTime);
+    if (startMinute == endMinute) {
+      throw ArgumentError.value(
+        endTime,
+        'endTime',
+        'DND start and end cannot be equal.',
+      );
+    }
+
+    return DoNotDisturbWindow._(startMinute: startMinute, endMinute: endMinute);
+  }
+
+  const DoNotDisturbWindow._({
+    required this.startMinute,
+    required this.endMinute,
+  });
+
+  final int startMinute;
+  final int endMinute;
+
+  String get startTime => _formatTimeOfDay(startMinute);
+  String get endTime => _formatTimeOfDay(endMinute);
+  bool get crossesMidnight => startMinute > endMinute;
+
+  bool contains(DateTime localDateTime) {
+    final minute = _minuteOfDay(localDateTime);
+    if (crossesMidnight) {
+      return minute >= startMinute || minute < endMinute;
+    }
+
+    return minute >= startMinute && minute < endMinute;
+  }
+
+  DateTime nextAllowedAt(DateTime localDateTime) {
+    if (!contains(localDateTime)) {
+      return localDateTime;
+    }
+
+    final minute = _minuteOfDay(localDateTime);
+    final endAt = DateTime(
+      localDateTime.year,
+      localDateTime.month,
+      localDateTime.day,
+      endMinute ~/ 60,
+      endMinute % 60,
+    );
+
+    if (crossesMidnight && minute >= startMinute) {
+      return endAt.add(const Duration(days: 1));
+    }
+
+    return endAt;
+  }
+}
+
 class ReminderIntent {
   const ReminderIntent({
     required this.reminderId,
@@ -850,23 +922,43 @@ class ReminderIntent {
     required this.deliverAt,
     this.offsetMinutes = 0,
     this.respectDnd = true,
+    this.priority = TaskPriority.none,
+    this.notificationTitle = _privateNotificationTitle,
+    this.privacyMode = NotificationPrivacyMode.private,
   });
 
   factory ReminderIntent.tonight({
     required String reminderId,
     required String taskId,
     required DateTime localNow,
+    DoNotDisturbWindow? dndWindow,
+    TaskPriority priority = TaskPriority.none,
+    bool respectDnd = true,
+    String? taskTitle,
+    NotificationPrivacyMode privacyMode = NotificationPrivacyMode.private,
   }) {
     final tonight = DateTime(localNow.year, localNow.month, localNow.day, 20);
     final plannedAt = localNow.isAfter(tonight)
         ? localNow.add(const Duration(hours: 1))
         : tonight;
+    final deliverAt = ReminderIntent.deliverAtRespectingDnd(
+      plannedAt: plannedAt,
+      dndWindow: dndWindow,
+      respectDnd: respectDnd,
+    );
 
     return ReminderIntent(
       reminderId: reminderId,
       taskId: taskId,
       plannedAt: plannedAt,
-      deliverAt: plannedAt,
+      deliverAt: deliverAt,
+      respectDnd: respectDnd,
+      priority: priority,
+      notificationTitle: _notificationTitleFor(
+        taskTitle: taskTitle,
+        privacyMode: privacyMode,
+      ),
+      privacyMode: privacyMode,
     );
   }
 
@@ -875,6 +967,11 @@ class ReminderIntent {
     required String taskId,
     required DateTime localDate,
     required String timeOfDay,
+    DoNotDisturbWindow? dndWindow,
+    TaskPriority priority = TaskPriority.none,
+    bool respectDnd = true,
+    String? taskTitle,
+    NotificationPrivacyMode privacyMode = NotificationPrivacyMode.private,
   }) {
     final minutes = _parseTimeOfDay(timeOfDay);
     final plannedAt = DateTime(
@@ -884,13 +981,37 @@ class ReminderIntent {
       minutes ~/ 60,
       minutes % 60,
     );
+    final deliverAt = ReminderIntent.deliverAtRespectingDnd(
+      plannedAt: plannedAt,
+      dndWindow: dndWindow,
+      respectDnd: respectDnd,
+    );
 
     return ReminderIntent(
       reminderId: reminderId,
       taskId: taskId,
       plannedAt: plannedAt,
-      deliverAt: plannedAt,
+      deliverAt: deliverAt,
+      respectDnd: respectDnd,
+      priority: priority,
+      notificationTitle: _notificationTitleFor(
+        taskTitle: taskTitle,
+        privacyMode: privacyMode,
+      ),
+      privacyMode: privacyMode,
     );
+  }
+
+  static DateTime deliverAtRespectingDnd({
+    required DateTime plannedAt,
+    DoNotDisturbWindow? dndWindow,
+    bool respectDnd = true,
+  }) {
+    if (!respectDnd || dndWindow == null) {
+      return plannedAt;
+    }
+
+    return dndWindow.nextAllowedAt(plannedAt);
   }
 
   String get eventName => 'notification_scheduled';
@@ -903,6 +1024,9 @@ class ReminderIntent {
       'plannedAt': plannedAt.toIso8601String(),
       'deliverAt': deliverAt.toIso8601String(),
       'respectDnd': respectDnd,
+      'priority': priority.contractName,
+      'notificationTitle': notificationTitle,
+      'privacyMode': privacyMode.contractName,
     };
   }
 
@@ -912,6 +1036,9 @@ class ReminderIntent {
   final DateTime deliverAt;
   final int offsetMinutes;
   final bool respectDnd;
+  final TaskPriority priority;
+  final String notificationTitle;
+  final NotificationPrivacyMode privacyMode;
 }
 
 int _parseTimeOfDay(String timeOfDay) {
@@ -929,6 +1056,30 @@ int _parseTimeOfDay(String timeOfDay) {
   final hour = int.parse(match.group(1)!);
   final minute = int.parse(match.group(2)!);
   return hour * 60 + minute;
+}
+
+int _minuteOfDay(DateTime value) => value.hour * 60 + value.minute;
+
+String _formatTimeOfDay(int minutes) {
+  final hour = (minutes ~/ 60).toString().padLeft(2, '0');
+  final minute = (minutes % 60).toString().padLeft(2, '0');
+  return '$hour:$minute';
+}
+
+const String _privateNotificationTitle = 'Task reminder';
+
+String _notificationTitleFor({
+  required String? taskTitle,
+  required NotificationPrivacyMode privacyMode,
+}) {
+  if (privacyMode == NotificationPrivacyMode.visible) {
+    final visibleTitle = taskTitle?.trim();
+    if (visibleTitle != null && visibleTitle.isNotEmpty) {
+      return visibleTitle;
+    }
+  }
+
+  return _privateNotificationTitle;
 }
 
 class LongTermTask {

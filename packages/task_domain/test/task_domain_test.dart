@@ -18,6 +18,7 @@ void main() {
     expect(TaskStatus.completed.contractName, 'completed');
     expect(TaskType.longTermChild.contractName, 'long_term_child');
     expect(TaskPriority.high.contractName, 'high');
+    expect(NotificationPrivacyMode.private.contractName, 'private');
     expect(TaskDateSource.defaultToday.contractName, 'default_today');
     expect(CompletionSource.userAction.contractName, 'user_action');
     expect(TaskListType.inbox.contractName, 'inbox');
@@ -219,6 +220,85 @@ void main() {
     expect(reminder.plannedAt, DateTime(2026, 7, 4, 21, 30));
     expect(reminder.deliverAt, reminder.plannedAt);
     expect(reminder.payload['plannedAt'], '2026-07-04T21:30:00.000');
+  });
+
+  test('detects cross-day do not disturb windows', () {
+    final dnd = DoNotDisturbWindow(startTime: '22:00', endTime: '07:00');
+
+    expect(dnd.crossesMidnight, isTrue);
+    expect(dnd.contains(DateTime(2026, 7, 4, 21, 59)), isFalse);
+    expect(dnd.contains(DateTime(2026, 7, 4, 22)), isTrue);
+    expect(dnd.contains(DateTime(2026, 7, 5, 6, 59)), isTrue);
+    expect(dnd.contains(DateTime(2026, 7, 5, 7)), isFalse);
+    expect(
+      dnd.nextAllowedAt(DateTime(2026, 7, 4, 23, 30)),
+      DateTime(2026, 7, 5, 7),
+    );
+    expect(
+      dnd.nextAllowedAt(DateTime(2026, 7, 5, 6, 30)),
+      DateTime(2026, 7, 5, 7),
+    );
+  });
+
+  test('uses now plus one hour for tonight reminders after 20:00', () {
+    final dnd = DoNotDisturbWindow(startTime: '23:00', endTime: '07:00');
+    final reminder = ReminderIntent.tonight(
+      reminderId: 'rem_tonight_late',
+      taskId: 'task_1',
+      localNow: DateTime(2026, 7, 4, 20, 30),
+      dndWindow: dnd,
+    );
+
+    expect(reminder.plannedAt, DateTime(2026, 7, 4, 21, 30));
+    expect(reminder.deliverAt, DateTime(2026, 7, 4, 21, 30));
+    expect(dnd.contains(reminder.deliverAt), isFalse);
+  });
+
+  test('delays tonight reminders that would fall inside dnd', () {
+    final dnd = DoNotDisturbWindow(startTime: '22:00', endTime: '07:00');
+    final reminder = ReminderIntent.tonight(
+      reminderId: 'rem_tonight_dnd',
+      taskId: 'task_1',
+      localNow: DateTime(2026, 7, 4, 21, 30),
+      dndWindow: dnd,
+    );
+
+    expect(reminder.plannedAt, DateTime(2026, 7, 4, 22, 30));
+    expect(reminder.deliverAt, DateTime(2026, 7, 5, 7));
+    expect(dnd.contains(reminder.deliverAt), isFalse);
+  });
+
+  test('does not let high priority reminders bypass dnd by default', () {
+    final dnd = DoNotDisturbWindow(startTime: '22:00', endTime: '07:00');
+    final reminder = ReminderIntent.localTime(
+      reminderId: 'rem_high',
+      taskId: 'task_1',
+      localDate: DateTime(2026, 7, 4),
+      timeOfDay: '23:15',
+      dndWindow: dnd,
+      priority: TaskPriority.high,
+    );
+
+    expect(reminder.priority, TaskPriority.high);
+    expect(reminder.respectDnd, isTrue);
+    expect(reminder.deliverAt, DateTime(2026, 7, 5, 7));
+    expect(reminder.payload['priority'], 'high');
+    expect(reminder.payload['respectDnd'], isTrue);
+  });
+
+  test('uses a privacy-safe notification title by default', () {
+    final reminder = ReminderIntent.localTime(
+      reminderId: 'rem_private',
+      taskId: 'task_1',
+      localDate: DateTime(2026, 7, 4),
+      timeOfDay: '21:30',
+      taskTitle: 'Pick up medication',
+    );
+
+    expect(reminder.privacyMode, NotificationPrivacyMode.private);
+    expect(reminder.notificationTitle, 'Task reminder');
+    expect(reminder.payload['notificationTitle'], 'Task reminder');
+    expect(reminder.payload['privacyMode'], 'private');
   });
 
   test('clears task optional scheduling fields through copyWith flags', () {

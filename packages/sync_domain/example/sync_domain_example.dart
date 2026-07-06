@@ -6,8 +6,8 @@ void main() {
     entityType: 'task',
     entityId: 'task_1',
     eventId: 'evt_1',
+    baseRevision: 1,
   );
 
   print(draft.dedupeKey);
 }
-
