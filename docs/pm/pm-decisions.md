@@ -386,3 +386,11 @@ P0 代码层保留 phone / wechat Provider 枚举或能力占位，但首轮只�
 结论：
 
 Android Widget 点击怪兽状态帧进入怪兽页；点击今日进度、今日任务激励、前日反馈和过期态进入今日页并触发刷新。Widget 不提供组件内勾选任务，不产生任务完成、XP、Streak 或怪兽状态变更事件。
+
+## D-042: 节点 6 账号领域包边界
+
+状态：已裁决
+
+结论：
+
+账号、游客、游客合并任务和注销冷静期领域模型新建独立 `packages/account_domain/`。`sync_domain` 只引用账号相关事件事实和冲突策略，不承载账号状态机本体；App 接线后续再通过 `apps/list_monster_app/lib/account/**` 消费该包。

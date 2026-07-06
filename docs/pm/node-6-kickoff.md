@@ -222,7 +222,19 @@ Wave A 判定：通过 QA，可提交。
 
 目标: 在 App 内生成统一只读 CompanionSnapshot。
 
-建议允许修改的文件范围: `apps/list_monster_app/lib/companion_snapshot/**`、`apps/list_monster_app/test/companion_snapshot_*`
+背景: CompanionSnapshot 代码契约已补齐，但 App 还没有统一快照生成器。桌宠和 Widget 后续必须只读该快照，不能自行计算任务、XP、Streak。
+
+验收标准:
+
+1. 新增 App 层快照生成器，只读取 `TaskSystemController` 的公开状态或等价只读输入。
+2. 输出 `packages/companion_contract` 中的 `CompanionSnapshot`。
+3. 默认 `hideTaskTitlesOutsideApp = true`，外部展示文案不包含具体任务标题。
+4. 快照包含今日进度、XP / Streak 摘要、怪兽状态、资源 ID、过期时间。
+5. 测试覆盖正常快照、隐私隐藏、过期时间和不直接计算 XP / Streak。
+
+允许修改的文件范围: `apps/list_monster_app/lib/companion_snapshot/**`、`apps/list_monster_app/test/companion_snapshot_*`
+
+禁止事项: 不许修改 `main.dart`、`task_system_controller.dart`、Android、Windows、docs、其他 packages；不许引入新依赖；不许提交。
 
 依赖: N6-I-101。
 
@@ -230,7 +242,19 @@ Wave A 判定：通过 QA，可提交。
 
 目标: 建立本地存储端口与内存 / 测试实现。
 
-建议允许修改的文件范围: `packages/local_store/**`
+背景: 当前 `local_store` 仍为空壳。节点 6 后续需要保存账号、任务快照、事件、同步队列、通知设置和 CompanionSnapshot，但首轮不引入数据库依赖。
+
+验收标准:
+
+1. 定义本地存储端口，覆盖账号状态、任务快照、事件记录、同步队列、通知设置、CompanionSnapshot。
+2. 提供内存实现用于测试。
+3. 不绑定真实数据库或云服务。
+4. 测试覆盖写入、读取、覆盖更新、队列追加、快照过期读取。
+5. 包内 `dart analyze` 与 `dart test` 通过。
+
+允许修改的文件范围: `packages/local_store/**`
+
+禁止事项: 不许修改 App、docs、其他 packages；不许引入新依赖；不许提交。
 
 依赖: N6-I-101、N6-I-103。
 
@@ -238,6 +262,76 @@ Wave A 判定：通过 QA，可提交。
 
 目标: 建立账号 / 游客 / 注销冷静期领域模型。
 
-建议允许修改的文件范围: 待 PM 裁决是否新建 `packages/account_domain/**`，或暂放入 `packages/sync_domain/**` 后再拆包。
+背景: PM 已裁决新建 `packages/account_domain/`。首轮只做本地可测领域模型，不接真实第三方 Auth。
 
-依赖: PM 对包边界裁决。
+验收标准:
+
+1. 支持 guest、registered、deletion_pending、deleted 等账号状态。
+2. 支持 phone / wechat Provider 枚举或能力占位，但只实现本地模拟登录所需模型。
+3. 支持 GuestMergeJob 的 pending_confirmation、confirmed、cancelled、merged 等状态。
+4. 支持 15 天注销冷静期、取消注销恢复 active、冷静期只读判断。
+5. 测试覆盖游客创建、模拟登录、游客合并确认 / 取消、注销冷静期、取消注销、冷静期只读。
+6. 包内 `dart analyze` 与 `dart test` 通过。
+
+允许修改的文件范围: `packages/account_domain/**`
+
+禁止事项: 不许修改 App、sync_domain、local_store、docs、其他 packages；不许接真实 Auth；不许引入新依赖；不许提交。
+
+依赖: D-042。
+
+## 当前等待
+
+N6-I-104 已完成：
+
+1. 变更范围为 `apps/list_monster_app/lib/companion_snapshot/**` 与 `apps/list_monster_app/test/companion_snapshot_*`。
+2. App 层统一 CompanionSnapshot 生成器已完成，默认隐藏任务标题。
+3. `flutter test` 与 `dart analyze` 通过。
+
+N6-I-105 已完成：
+
+1. 变更范围为 `packages/local_store/**`。
+2. 本地存储端口和 MemoryLocalStore 已完成。
+3. 包内 `dart analyze` 与 `dart test` 通过。
+
+N6-I-106 已完成：
+
+1. 变更范围为 `packages/account_domain/**`。
+2. 账号、游客、模拟登录、游客合并和注销冷静期领域模型已完成。
+3. 包内 `dart analyze` 与 `dart test` 通过。
+
+`QA-N6-B-001` 复检裁决为 pass：
+
+1. App 快照生成器只读 `TaskSystemController` 公开状态或等价输入，输出 CompanionSnapshot，默认隐藏任务标题。
+2. local_store 本地存储端口和 MemoryLocalStore 覆盖账号、任务快照、事件、同步队列、通知设置和 CompanionSnapshot。
+3. account_domain 覆盖账号状态、模拟登录、游客合并和注销冷静期。
+4. `apps/list_monster_app` 的 `flutter test` 37 项通过，`dart analyze .` 通过。
+5. `packages/local_store` 与 `packages/account_domain` 的 `dart analyze` / `dart test` 通过。
+6. 实现范围合规。
+
+Wave B 判定：通过 QA，可提交。
+
+## 后续 Wave C 候选
+
+任务ID: N6-I-107
+
+目标: 将账号 / 本地存储 / 快照生成接入 App 壳与“我的”页。
+
+建议允许修改的文件范围: `apps/list_monster_app/lib/account/**`、`apps/list_monster_app/lib/sync/**`、`apps/list_monster_app/lib/main.dart`、`apps/list_monster_app/test/account_sync_*`、`apps/list_monster_app/test/widget_test.dart`
+
+依赖: N6-I-104、N6-I-105、N6-I-106。
+
+任务ID: N6-I-108
+
+目标: 建立通知适配层端口，消费 task_domain 勿扰与隐私规则。
+
+建议允许修改的文件范围: `apps/list_monster_app/lib/notifications/**`、`apps/list_monster_app/test/notifications/**`
+
+依赖: N6-I-102、N6-I-105。
+
+任务ID: N6-I-109
+
+目标: 建立 CompanionSnapshot 持久化刷新链路。
+
+建议允许修改的文件范围: `apps/list_monster_app/lib/companion_snapshot/**`、`apps/list_monster_app/test/companion_snapshot_*`
+
+依赖: N6-I-104、N6-I-105。
