@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:list_monster_app/companion_snapshot/android_widget_bridge.dart';
 import 'package:list_monster_app/companion_snapshot/companion_snapshot_builder.dart';
 import 'package:list_monster_app/companion_snapshot/companion_snapshot_refresh_service.dart';
 import 'package:list_monster_app/task_system_controller.dart';
@@ -47,6 +48,45 @@ void main() {
       expect(localSnapshot.payload['snapshotId'], snapshot.snapshotId);
       expect(readResult.state, CompanionSnapshotReadState.fresh);
       expect(readResult.snapshot?.snapshotId, snapshot.snapshotId);
+    },
+  );
+
+  test(
+    'refresh mirrors the same persisted snapshot to the android widget bridge',
+    () async {
+      final store = MemoryLocalStore();
+      final widgetBridge = _RecordingWidgetBridge();
+      final service = CompanionSnapshotRefreshService(
+        localStore: store,
+        widgetBridge: widgetBridge,
+      );
+      final controller = TaskSystemController(
+        today: DateTime(2026, 7, 7),
+        now: DateTime(2026, 7, 7, 10),
+      );
+      addTearDown(controller.dispose);
+
+      controller.createTask('sensitive-payroll-title');
+
+      final generatedAt = DateTime.utc(2026, 7, 7, 2);
+      final snapshot = await service.refresh(
+        controller,
+        generatedAt: generatedAt,
+      );
+      final localSnapshot = await store.readCompanionSnapshot(now: generatedAt);
+      final widgetSnapshot = widgetBridge.persistedSnapshots.single;
+      final widgetJson = encodeAndroidWidgetSnapshot(widgetSnapshot);
+      final widgetRead = AndroidWidgetSnapshotReadResult.fromPersistedJson(
+        widgetJson,
+        now: generatedAt.add(const Duration(minutes: 1)),
+      );
+
+      expect(localSnapshot?.snapshotId, snapshot.snapshotId);
+      expect(widgetSnapshot.snapshotId, localSnapshot?.snapshotId);
+      expect(widgetSnapshot.expiresAt, localSnapshot?.expiresAt);
+      expect(widgetRead.state, AndroidWidgetSnapshotState.fresh);
+      expect(widgetRead.payload?['snapshotId'], snapshot.snapshotId);
+      expect(widgetJson, isNot(contains('sensitive-payroll-title')));
     },
   );
 
@@ -210,4 +250,23 @@ void main() {
       expect(localSnapshot?.payload['hideTaskTitlesOutsideApp'], isTrue);
     },
   );
+}
+
+final class _RecordingWidgetBridge implements CompanionSnapshotWidgetBridge {
+  final List<LocalCompanionSnapshot> persistedSnapshots = [];
+
+  @override
+  Future<AndroidWidgetLaunchIntent?> consumeInitialWidgetLaunchIntent() async {
+    return null;
+  }
+
+  @override
+  Future<void> persistSnapshot(LocalCompanionSnapshot snapshot) async {
+    persistedSnapshots.add(snapshot);
+  }
+
+  @override
+  void setWidgetLaunchIntentHandler(
+    AndroidWidgetLaunchIntentHandler? handler,
+  ) {}
 }

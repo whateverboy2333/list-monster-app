@@ -490,4 +490,71 @@ N6-I-111 已完成：
 8. `flutter test` 64 项通过，`dart analyze .` 通过，`flutter build windows --debug` 通过，`flutter build apk --debug` 通过。
 9. 风险备注：未跟踪 `.codex/`、`AGENTS.md`、预览截图不计实现越界；本轮未做真机桌面 Widget 点击流转验证。
 
-Wave D 判定：通过 QA，可提交。提交后启动 `N6-I-112` 节点 6 端到端冻结前总验收。
+Wave D 判定：通过 QA，已提交为 `a3b4fdc`。当前启动 `N6-I-112` 节点 6 端到端冻结前总验收。
+
+`QA-N6-FINAL-001` 总验收裁决为 fail：
+
+1. 账号、注销冷静期只读、同步领域、local_store、提醒 / 勿扰、通知适配、PC 桌宠和测试 / 构建矩阵均通过。
+2. 阻断问题 1：App 快照刷新只写入 LocalStorePort / MemoryLocalStore；Android Widget 读取 SharedPreferences，两者没有端到端一致的数据通路，Widget 无法读取 App 生成的持久化 CompanionSnapshot。
+3. 阻断问题 2：Android Widget 创建 `listmonster://monster` / `listmonster://today` 与刷新意图，但 Flutter App 没有消费 deep link / destination，点击怪兽帧不能落到 Monster 页，今日页刷新意图也不会被消费。
+4. 验证矩阵全部通过：各 package `dart analyze` / `dart test`、App `flutter test`、App `dart analyze .`、Windows debug build、Android debug APK build。
+5. 风险备注：未跟踪 `.codex/`、`AGENTS.md`、预览截图不计实现越界；本轮未做 Android 真机 Widget 点击流转验证。
+
+返工任务卡：
+
+任务ID: N6-R-113
+
+目标: 打通 Android Widget 与 App 的 CompanionSnapshot 持久化读取通路，并让 Widget 点击落点 / 刷新意图被 App 消费。
+
+背景: `QA-N6-FINAL-001` 发现两个阻断问题。当前 App 快照刷新写入 LocalStorePort / MemoryLocalStore，Android Widget 读取 SharedPreferences，导致 Widget 无法端到端读取 App 生成快照；同时 Widget deep link / destination / refresh intent 没有被 Flutter App 消费。
+
+验收标准:
+
+1. App 生成或刷新 CompanionSnapshot 后，Android Widget 能读取同一份最新快照数据；不得让 Widget 自己计算任务、XP、Streak 或怪兽状态。
+2. Android Widget 无快照、过期快照、新快照三种状态均有可验证表现；过期态不得展示敏感任务标题。
+3. Widget 怪兽状态帧点击进入 App 后落到怪兽页；今日进度、今日任务激励、前日反馈、过期态点击进入 App 后落到今日页。
+4. Widget 刷新意图被 App 消费后，应触发或安排 CompanionSnapshot 刷新；刷新不得产生 XP / Streak 副作用。
+5. Widget 仍不提供组件内勾选任务，不发任务完成、XP、Streak 或怪兽状态变更事件。
+6. 保留 RemoteViews 壳的 Glance 迁移点，不要求本次完整接入 Glance。
+7. 自动化测试覆盖快照桥接、无 / 过期 / 新快照读取、deep link 落点、刷新意图消费、敏感标题不外显和无成长副作用。
+8. `apps/list_monster_app` 下 `flutter test`、`dart analyze .`、`flutter build apk --debug` 必须通过；如 Windows 侧未改动，可不重复 Windows build。
+
+允许修改的文件范围: `apps/list_monster_app/lib/companion_snapshot/**`、`apps/list_monster_app/lib/main.dart`、`apps/list_monster_app/test/companion_snapshot_*`、`apps/list_monster_app/test/widget_test.dart`、`apps/list_monster_app/test/android_widget_*`、`apps/list_monster_app/android/app/src/main/AndroidManifest.xml`、`apps/list_monster_app/android/app/src/main/kotlin/com/listmonster/list_monster_app/MainActivity.kt`、`apps/list_monster_app/android/app/src/main/java/com/listmonster/list_monster_app/widget/**`
+
+禁止事项: 不许修改 Windows、desktop_pet、account、sync、notifications、packages、docs；不许引入新依赖；不许接真实 Auth / 云同步 / 系统通知插件；不许提交。
+
+依赖: N6-I-104、N6-I-109、N6-I-111、QA-N6-FINAL-001。
+
+当前处理：返工卡已派回原 Android Widget 实现 Agent FE-Gamma。
+
+N6-R-113 已完成：
+
+1. 变更范围为 `apps/list_monster_app/lib/companion_snapshot/**`、`apps/list_monster_app/lib/main.dart`、`apps/list_monster_app/android/app/src/main/kotlin/com/listmonster/list_monster_app/MainActivity.kt` 与 Android Widget 相关测试。
+2. 快照刷新服务已同时服务 App 内 LocalStore 和 Android Widget 持久化桥接，Widget 仍只读快照。
+3. 新增无快照、过期快照、新快照的 Widget 读取契约覆盖，敏感标题不外显。
+4. Widget 怪兽 deep link 落到怪兽页；今日相关 deep link 落到今日页。
+5. App 消费刷新意图后触发 CompanionSnapshot 刷新，且不产生 XP / Streak 副作用。
+6. 实现 Agent 报告 `flutter test`、`dart analyze .`、`flutter build apk --debug` 均通过。
+
+`QA-N6-R-113-001` 复检裁决为 pass：
+
+1. CompanionSnapshotRefreshService 同时写入 LocalStore 与 Android Widget 桥接数据；Android Widget Store 读取同名 SharedPreferences，Provider 仍只读快照字段。
+2. Android Widget 无快照、过期快照、新快照三态读取通过；敏感标题不外显。
+3. Widget 怪兽帧点击落到怪兽页，其余今日相关入口落到今日页；刷新意图被 App 消费。
+4. 刷新意图触发 CompanionSnapshot 刷新，且无 XP / Streak 副作用。
+5. Widget 仍无勾选任务入口，不发任务完成、XP、Streak 或怪兽状态变更事件；保留 Glance 迁移点。
+6. `flutter test` 73 项通过，`dart analyze .` 通过，`flutter build apk --debug` 通过。
+
+返工判定：通过 QA。当前重新启动节点 6 端到端冻结前总验收。
+
+`QA-N6-FINAL-002` 总验收裁决为 pass：
+
+1. 账号、游客、本地模拟登录、游客数据合并确认 / 取消、注销冷静期和取消注销通过。
+2. 注销冷静期下新增会同步的数据入口只读门禁通过。
+3. sync_domain、local_store、task_domain、通知适配、CompanionSnapshot 契约 / 生成 / 刷新链路通过。
+4. PC 桌宠只读快照、开关状态、勿扰低动效、隐私泛化文案和关闭不退出主 App 通过。
+5. Android Widget 只读持久化 CompanionSnapshot、三态展示、deep link 落点、刷新意图消费、无勾选 / 无成长副作用和 Glance 迁移点通过。
+6. 验证矩阵通过：各 package `dart analyze` / `dart test`、App `flutter test` 73 项、App `dart analyze .`、Windows debug build、Android debug APK build。
+7. 风险备注：未做 Android 真机 Widget 点击流转验证；未跟踪 `.codex/`、`AGENTS.md`、预览截图不计节点实现越界；未跟踪旧状态页后续文档整理时处理。
+
+节点 6 最终判定：完成，可进入节点 7：QA 冻结与 MVP Beta。

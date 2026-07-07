@@ -70,36 +70,9 @@
 
 详见 [node-roadmap-freeze.md](node-roadmap-freeze.md)。
 
-## 最近完成节点：节点 5
+## 最近完成节点：节点 6
 
-节点 5 名称：怪兽养成与激励 P0 完成。
-
-范围：
-
-```text
-XP 计算
-每日上限
-高优先级 +15 替代 +10
-Streak
-streak_break
-今日任务激励
-前日完成反馈
-累计 3 天奖励
-睡觉 / 想念 / 期待 / 元气状态机
-抚摸与多次唤醒
-```
-
-关键验收：
-
-所有成长都来自真实任务行为，不能被抚摸、打开 App、教学任务刷 XP。
-
-节点 5 交付摘要详见 [node-5-growth-p0-summary.md](node-5-growth-p0-summary.md)。
-
-## 当前推进节点：节点 6
-
-节点 6 名称：账号 / 同步 / 通知 / 陪伴场域。
-
-状态：首轮只读摸底已完成，PM 已裁决节点 6 首轮技术边界。实现 Wave A 的 `N6-I-101`、`N6-I-102`、`N6-I-103` 已完成、通过 `QA-N6-A-002` 复检并提交。Wave B 的 `N6-I-104`、`N6-I-105`、`N6-I-106` 已完成、通过 `QA-N6-B-001` 复检并提交。Wave C 的 `N6-I-107`、`N6-I-108`、`N6-I-109` 已完成、通过 `QA-N6-C-001` 复检并提交。Wave D 的 `N6-I-110` PC 第二窗口桌宠基础壳、`N6-I-111` Android Widget 原生壳已通过 `QA-N6-D-001` 复检，可提交；下一步启动 `N6-I-112` 节点 6 端到端冻结前总验收。
+节点 6 名称：账号 / 同步 / 通知 / 陪伴场域完成。
 
 范围：
 
@@ -107,18 +80,48 @@ streak_break
 游客模式
 登录
 游客数据合并确认
-云同步
+云同步契约
 本地通知
 勿扰时段
 15 天注销冷静期
 PC 第二窗口桌宠
-Android Glance Widget
+Android Widget
 CompanionSnapshot
 ```
 
 关键验收：
 
 桌宠和 Widget 只读统一快照，不自己计算任务、XP、Streak。
+
+节点 6 交付摘要详见 [node-6-delivery-summary.md](node-6-delivery-summary.md)。
+
+## 当前推进节点：节点 7
+
+节点 7 名称：QA 冻结与 MVP Beta。
+
+状态：待启动。节点 6 已通过 `QA-N6-FINAL-002` 总验收；下一步进入 P0 全链路冻结、Beta 可试用质量门和缺陷修复。
+
+范围：
+
+```text
+完成反馈链
+任务撤销
+task_restored
+长期任务
+无压清理
+XP 幂等
+Streak / streak_break
+今日任务激励
+离线完成
+游客合并
+通知勿扰
+桌宠开关
+Android Widget
+```
+
+关键验收：
+
+P0 全绿，核心闭环不卡顿，打勾反馈不被同步或网络阻塞。
 
 ## 进入代码开发前准入门槛
 

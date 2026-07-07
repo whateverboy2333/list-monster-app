@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:account_domain/account_domain.dart';
@@ -8,10 +10,10 @@ import 'package:task_domain/task_domain.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import 'account/account_session_controller.dart';
+import 'companion_snapshot/android_widget_bridge.dart';
 import 'companion_snapshot/companion_snapshot_refresh_service.dart';
 import 'desktop_pet/desktop_pet.dart';
 import 'language_preference_store.dart';
-import 'sync/app_sync_controller.dart';
 import 'task_system_controller.dart';
 
 void main(List<String> args) {
@@ -383,12 +385,14 @@ class ListMonsterApp extends StatefulWidget {
     this.taskSystemController,
     this.accountSessionController,
     this.desktopPetWindowPort,
+    this.androidWidgetBridge,
     this.openedAt,
   });
 
   final TaskSystemController? taskSystemController;
   final AccountSessionController? accountSessionController;
   final DesktopPetWindowPort? desktopPetWindowPort;
+  final CompanionSnapshotWidgetBridge? androidWidgetBridge;
   final DateTime? openedAt;
 
   @override
@@ -444,6 +448,7 @@ class _ListMonsterAppState extends State<ListMonsterApp> {
           taskSystemController: widget.taskSystemController,
           accountSessionController: widget.accountSessionController,
           desktopPetWindowPort: widget.desktopPetWindowPort,
+          androidWidgetBridge: widget.androidWidgetBridge,
           openedAt: widget.openedAt,
         ),
       ),
@@ -457,12 +462,14 @@ class ListMonsterShell extends StatefulWidget {
     this.taskSystemController,
     this.accountSessionController,
     this.desktopPetWindowPort,
+    this.androidWidgetBridge,
     this.openedAt,
   });
 
   final TaskSystemController? taskSystemController;
   final AccountSessionController? accountSessionController;
   final DesktopPetWindowPort? desktopPetWindowPort;
+  final CompanionSnapshotWidgetBridge? androidWidgetBridge;
   final DateTime? openedAt;
 
   @override
@@ -475,9 +482,9 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
   late final bool _ownsTaskSystem;
   late final AccountSessionController _accountSession;
   late final bool _ownsAccountSession;
-  late final AppSyncController _syncController;
   late final CompanionSnapshotRefreshService _companionSnapshotService;
   late final DesktopPetController _desktopPetController;
+  late final CompanionSnapshotWidgetBridge _androidWidgetBridge;
 
   @override
   void initState() {
@@ -487,9 +494,12 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
     _accountSession =
         widget.accountSessionController ?? AccountSessionController();
     _ownsAccountSession = widget.accountSessionController == null;
-    _syncController = AppSyncController(localStore: _accountSession.localStore);
+    _androidWidgetBridge =
+        widget.androidWidgetBridge ??
+        MethodChannelCompanionSnapshotWidgetBridge();
     _companionSnapshotService = CompanionSnapshotRefreshService(
       localStore: _accountSession.localStore,
+      widgetBridge: _androidWidgetBridge,
     );
     _desktopPetController = DesktopPetController(
       windowPort:
@@ -498,10 +508,15 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
     );
     _accountSession.restore();
     _taskSystem.recordAppOpened(widget.openedAt ?? DateTime.now());
+    _androidWidgetBridge.setWidgetLaunchIntentHandler(
+      _handleAndroidWidgetLaunchIntent,
+    );
+    unawaited(_consumeInitialAndroidWidgetLaunchIntent());
   }
 
   @override
   void dispose() {
+    _androidWidgetBridge.setWidgetLaunchIntentHandler(null);
     _desktopPetController.dispose();
     if (_ownsAccountSession) {
       _accountSession.dispose();
@@ -522,8 +537,8 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
       MeTab(
         accountSession: _accountSession,
         taskSystem: _taskSystem,
-        syncController: _syncController,
         desktopPetController: _desktopPetController,
+        refreshCompanionSnapshot: _refreshCompanionSnapshot,
         refreshDesktopPetSnapshot: _refreshDesktopPetSnapshot,
       ),
     ];
@@ -567,6 +582,38 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
       CompanionSnapshotRefreshTrigger.manual,
       desktopPetState: state,
     );
+  }
+
+  Future<CompanionSnapshot> _refreshCompanionSnapshot() {
+    return _companionSnapshotService.refreshForTrigger(
+      _taskSystem,
+      CompanionSnapshotRefreshTrigger.manual,
+    );
+  }
+
+  Future<void> _consumeInitialAndroidWidgetLaunchIntent() async {
+    final intent = await _androidWidgetBridge
+        .consumeInitialWidgetLaunchIntent();
+    if (intent != null) {
+      await _handleAndroidWidgetLaunchIntent(intent);
+    }
+  }
+
+  Future<void> _handleAndroidWidgetLaunchIntent(
+    AndroidWidgetLaunchIntent intent,
+  ) async {
+    if (!mounted) {
+      return;
+    }
+
+    final nextTabIndex = intent.opensMonster ? 2 : 0;
+    if (_tabIndex != nextTabIndex) {
+      setState(() => _tabIndex = nextTabIndex);
+    }
+
+    if (intent.refreshCompanionSnapshot) {
+      await _refreshCompanionSnapshot();
+    }
   }
 }
 
@@ -1966,15 +2013,15 @@ class MeTab extends StatelessWidget {
     super.key,
     required this.accountSession,
     required this.taskSystem,
-    required this.syncController,
     required this.desktopPetController,
+    required this.refreshCompanionSnapshot,
     required this.refreshDesktopPetSnapshot,
   });
 
   final AccountSessionController accountSession;
   final TaskSystemController taskSystem;
-  final AppSyncController syncController;
   final DesktopPetController desktopPetController;
+  final Future<CompanionSnapshot> Function() refreshCompanionSnapshot;
   final Future<CompanionSnapshot> Function(CompanionDesktopPetState state)
   refreshDesktopPetSnapshot;
 
@@ -2163,7 +2210,7 @@ class MeTab extends StatelessWidget {
   }
 
   Future<void> _generateSnapshot(BuildContext context) async {
-    await syncController.generateCompanionSnapshot(taskSystem);
+    await refreshCompanionSnapshot();
     if (context.mounted) {
       _showSnack(context, context.s.snapshotGenerated);
     }

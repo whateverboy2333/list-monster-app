@@ -1,4 +1,5 @@
 import 'package:companion_contract/companion_contract.dart';
+import 'package:list_monster_app/companion_snapshot/android_widget_bridge.dart';
 import 'package:list_monster_app/companion_snapshot/companion_snapshot_builder.dart';
 import 'package:list_monster_app/task_system_controller.dart';
 import 'package:local_store/local_store.dart';
@@ -37,9 +38,14 @@ class CompanionSnapshotReadResult {
 }
 
 class CompanionSnapshotRefreshService {
-  CompanionSnapshotRefreshService({required this.localStore});
+  CompanionSnapshotRefreshService({
+    required this.localStore,
+    CompanionSnapshotWidgetBridge? widgetBridge,
+  }) : widgetBridge =
+           widgetBridge ?? MethodChannelCompanionSnapshotWidgetBridge();
 
   final LocalStorePort localStore;
+  final CompanionSnapshotWidgetBridge widgetBridge;
 
   Future<CompanionSnapshot> refresh(
     TaskSystemController controller, {
@@ -60,7 +66,9 @@ class CompanionSnapshotRefreshService {
       dndActive: dndActive,
       styleLine: styleLine,
     );
-    await localStore.saveCompanionSnapshot(_toLocalSnapshot(snapshot));
+    final localSnapshot = _toLocalSnapshot(snapshot);
+    await localStore.saveCompanionSnapshot(localSnapshot);
+    await widgetBridge.persistSnapshot(localSnapshot);
     return snapshot;
   }
 
