@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:account_domain/account_domain.dart';
+import 'package:companion_contract/companion_contract.dart';
 import 'package:monster_domain/monster_domain.dart';
 import 'package:sprite_runtime/sprite_runtime.dart';
 import 'package:task_domain/task_domain.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import 'account/account_session_controller.dart';
+import 'companion_snapshot/companion_snapshot_refresh_service.dart';
+import 'desktop_pet/desktop_pet.dart';
 import 'language_preference_store.dart';
 import 'sync/app_sync_controller.dart';
 import 'task_system_controller.dart';
 
-void main() {
+void main(List<String> args) {
+  if (args.contains(desktopPetWindowArgument)) {
+    runApp(
+      DesktopPetWindowApp(
+        snapshotSource: ArgumentDesktopPetSnapshotSource.fromArguments(args),
+      ),
+    );
+    return;
+  }
+
   runApp(const ListMonsterApp());
 }
 
@@ -370,11 +382,13 @@ class ListMonsterApp extends StatefulWidget {
     super.key,
     this.taskSystemController,
     this.accountSessionController,
+    this.desktopPetWindowPort,
     this.openedAt,
   });
 
   final TaskSystemController? taskSystemController;
   final AccountSessionController? accountSessionController;
+  final DesktopPetWindowPort? desktopPetWindowPort;
   final DateTime? openedAt;
 
   @override
@@ -429,6 +443,7 @@ class _ListMonsterAppState extends State<ListMonsterApp> {
         home: ListMonsterShell(
           taskSystemController: widget.taskSystemController,
           accountSessionController: widget.accountSessionController,
+          desktopPetWindowPort: widget.desktopPetWindowPort,
           openedAt: widget.openedAt,
         ),
       ),
@@ -441,11 +456,13 @@ class ListMonsterShell extends StatefulWidget {
     super.key,
     this.taskSystemController,
     this.accountSessionController,
+    this.desktopPetWindowPort,
     this.openedAt,
   });
 
   final TaskSystemController? taskSystemController;
   final AccountSessionController? accountSessionController;
+  final DesktopPetWindowPort? desktopPetWindowPort;
   final DateTime? openedAt;
 
   @override
@@ -459,6 +476,8 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
   late final AccountSessionController _accountSession;
   late final bool _ownsAccountSession;
   late final AppSyncController _syncController;
+  late final CompanionSnapshotRefreshService _companionSnapshotService;
+  late final DesktopPetController _desktopPetController;
 
   @override
   void initState() {
@@ -469,12 +488,21 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
         widget.accountSessionController ?? AccountSessionController();
     _ownsAccountSession = widget.accountSessionController == null;
     _syncController = AppSyncController(localStore: _accountSession.localStore);
+    _companionSnapshotService = CompanionSnapshotRefreshService(
+      localStore: _accountSession.localStore,
+    );
+    _desktopPetController = DesktopPetController(
+      windowPort:
+          widget.desktopPetWindowPort ??
+          const MethodChannelDesktopPetWindowPort(),
+    );
     _accountSession.restore();
     _taskSystem.recordAppOpened(widget.openedAt ?? DateTime.now());
   }
 
   @override
   void dispose() {
+    _desktopPetController.dispose();
     if (_ownsAccountSession) {
       _accountSession.dispose();
     }
@@ -495,6 +523,8 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
         accountSession: _accountSession,
         taskSystem: _taskSystem,
         syncController: _syncController,
+        desktopPetController: _desktopPetController,
+        refreshDesktopPetSnapshot: _refreshDesktopPetSnapshot,
       ),
     ];
 
@@ -526,6 +556,16 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<CompanionSnapshot> _refreshDesktopPetSnapshot(
+    CompanionDesktopPetState state,
+  ) {
+    return _companionSnapshotService.refreshForTrigger(
+      _taskSystem,
+      CompanionSnapshotRefreshTrigger.manual,
+      desktopPetState: state,
     );
   }
 }
@@ -1927,16 +1967,25 @@ class MeTab extends StatelessWidget {
     required this.accountSession,
     required this.taskSystem,
     required this.syncController,
+    required this.desktopPetController,
+    required this.refreshDesktopPetSnapshot,
   });
 
   final AccountSessionController accountSession;
   final TaskSystemController taskSystem;
   final AppSyncController syncController;
+  final DesktopPetController desktopPetController;
+  final Future<CompanionSnapshot> Function(CompanionDesktopPetState state)
+  refreshDesktopPetSnapshot;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([accountSession, taskSystem]),
+      animation: Listenable.merge([
+        accountSession,
+        taskSystem,
+        desktopPetController,
+      ]),
       builder: (context, _) {
         final strings = context.s;
         final account = accountSession.account;
@@ -2012,6 +2061,12 @@ class MeTab extends StatelessWidget {
                     label: Text(strings.cancelDeletion),
                   ),
               ],
+            ),
+            const SizedBox(height: 20),
+            _DesktopPetPanel(
+              controller: desktopPetController,
+              onOpen: () => _openDesktopPet(context),
+              onClose: () => _closeDesktopPet(context),
             ),
           ],
         );
@@ -2112,6 +2167,79 @@ class MeTab extends StatelessWidget {
     if (context.mounted) {
       _showSnack(context, context.s.snapshotGenerated);
     }
+  }
+
+  Future<void> _openDesktopPet(BuildContext context) async {
+    final snapshot = await refreshDesktopPetSnapshot(
+      CompanionDesktopPetState.enabled,
+    );
+    await desktopPetController.open(snapshot);
+    if (context.mounted) {
+      _showSnack(context, desktopPetController.stateValue);
+    }
+  }
+
+  Future<void> _closeDesktopPet(BuildContext context) async {
+    await refreshDesktopPetSnapshot(CompanionDesktopPetState.disabled);
+    await desktopPetController.close();
+    if (context.mounted) {
+      _showSnack(context, desktopPetController.stateValue);
+    }
+  }
+}
+
+class _DesktopPetPanel extends StatelessWidget {
+  const _DesktopPetPanel({
+    required this.controller,
+    required this.onOpen,
+    required this.onClose,
+  });
+
+  final DesktopPetController controller;
+  final Future<void> Function() onOpen;
+  final Future<void> Function() onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final isOn = controller.isOn;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Desktop pet', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Chip(label: Text(controller.stateValue)),
+                if (isOn)
+                  OutlinedButton.icon(
+                    key: const ValueKey('desktop-pet-close-button'),
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close_outlined),
+                    label: const Text('Close desktop pet'),
+                  )
+                else
+                  FilledButton.icon(
+                    key: const ValueKey('desktop-pet-open-button'),
+                    onPressed: onOpen,
+                    icon: const Icon(Icons.open_in_new_outlined),
+                    label: const Text('Open desktop pet'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

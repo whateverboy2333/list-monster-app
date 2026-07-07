@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="list_monster_companion_widget_name">清单怪兽小组件</string>
+    <string name="list_monster_companion_widget_description">显示只读的怪兽伙伴快照。</string>
+    <string name="widget_status_live">快照就绪</string>
+    <string name="widget_status_expired">快照过期</string>
+    <string name="widget_status_empty">等待快照</string>
+    <string name="widget_status_unreadable">快照不可读</string>
+    <string name="widget_monster_placeholder_name">小单待唤醒</string>
+    <string name="widget_monster_title">%1$s Lv.%2$d</string>
+    <string name="widget_monster_placeholder_meta">打开应用生成桌面快照</string>
+    <string name="widget_monster_meta">%1$s · %2$s · %3$s</string>
+    <string name="widget_frame_placeholder">状态帧待同步</string>
+    <string name="widget_progress_title">今日进度</string>
+    <string name="widget_progress_placeholder">0/0，等待快照</string>
+    <string name="widget_progress_value">%1$d/%2$d，剩余 %3$d</string>
+    <string name="widget_progress_expired_value">上次 %1$d/%2$d</string>
+    <string name="widget_message_default">继续喂给小单一件小事。</string>
+    <string name="widget_message_empty">打开今日页生成小组件快照。</string>
+    <string name="widget_message_expired">快照已过期，点按回到今日页刷新。</string>
+    <string name="widget_message_unreadable">快照格式暂不可读，点按回到今日页刷新。</string>
+    <string name="widget_previous_feedback_value">%1$s：%2$s</string>
+    <string name="widget_streak_value">连续 %1$d 天，最佳 %2$d 天</string>
+    <string name="widget_streak_placeholder">Streak 等待快照</string>
+</resources>

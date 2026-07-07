@@ -411,7 +411,20 @@ Wave C 判定：通过 QA，可提交。
 
 目标: PC 第二窗口桌宠基础壳。
 
-建议允许修改的文件范围: `apps/list_monster_app/windows/**`、`apps/list_monster_app/lib/desktop_pet/**`、`apps/list_monster_app/test/desktop_pet_*`
+背景: CompanionSnapshot 生成和持久化刷新链路已完成。节点 6 还需要 PC 第二窗口桌宠入口，桌宠必须只读 CompanionSnapshot，不自己计算任务、XP、Streak。
+
+验收标准:
+
+1. 主 App 内提供桌宠打开 / 关闭入口，状态只保留 `desktop_pet_on` / `desktop_pet_off`。
+2. 桌宠基础视图只读 CompanionSnapshot 或快照读取服务，不直接读取任务列表、XP ledger、Streak 计算入口。
+3. 勿扰期间桌宠保持低动效，不弹提醒气泡、不播放声音、不使用强反馈。
+4. 桌宠提醒文案只使用泛化文案，不传入或展示具体任务标题。
+5. 关闭桌宠不退出主 App。
+6. 测试覆盖打开 / 关闭状态、只读快照、勿扰低动效、隐私文案和关闭不影响主 App。
+
+允许修改的文件范围: `apps/list_monster_app/windows/**`、`apps/list_monster_app/lib/desktop_pet/**`、`apps/list_monster_app/lib/main.dart`、`apps/list_monster_app/test/desktop_pet_*`、`apps/list_monster_app/test/widget_test.dart`
+
+禁止事项: 不许修改 Android、notifications、account、sync、companion_snapshot、packages、docs；不许引入新依赖；不许提交。
 
 依赖: N6-I-104、N6-I-109。
 
@@ -419,7 +432,20 @@ Wave C 判定：通过 QA，可提交。
 
 目标: Android Glance Widget 原生壳。
 
-建议允许修改的文件范围: `apps/list_monster_app/android/**`
+背景: CompanionSnapshot 生成和持久化刷新链路已完成。节点 6 还需要 Android Widget，Widget 必须只读持久化 CompanionSnapshot，不自己计算任务、XP、Streak。
+
+验收标准:
+
+1. Android 工程具备 Widget 原生壳或 Glance 壳的必要配置。
+2. Widget 数据源设计为读取持久化 CompanionSnapshot，不访问任务、XP、Streak 计算入口。
+3. Widget 展示怪兽状态帧、今日进度、Streak / 今日任务激励或过期态的 P0 文案 / 占位。
+4. Widget 点击怪兽状态帧进入怪兽页；点击今日进度、激励、前日反馈、过期态进入今日页并触发刷新意图或等价 deep link。
+5. Widget 不提供组件内勾选任务，不发出任务完成、XP、Streak 或怪兽状态变更事件。
+6. 如完整 Glance 接入受环境限制，必须明确保留 Glance 迁移点，并保证当前壳不违反只读快照原则。
+
+允许修改的文件范围: `apps/list_monster_app/android/**`
+
+禁止事项: 不许修改 Dart App、Windows、docs、packages；不许引入非 Android 侧依赖；不许提交。
 
 依赖: N6-I-104、N6-I-109。
 
@@ -430,3 +456,38 @@ Wave C 判定：通过 QA，可提交。
 建议允许修改的文件范围: 无，只读验收。
 
 依赖: N6-I-107、N6-I-108、N6-I-109，以及后续桌宠 / Widget 实现。
+
+## 当前等待
+
+N6-I-110 已完成：
+
+1. 变更范围为 `apps/list_monster_app/lib/main.dart`、`apps/list_monster_app/lib/desktop_pet/**`、`apps/list_monster_app/windows/runner/**` 与 `apps/list_monster_app/test/desktop_pet_*`。
+2. 主 App “我的”页已提供桌宠打开 / 关闭入口，状态仅保留 `desktop_pet_on` / `desktop_pet_off`。
+3. 桌宠视图只接收 CompanionSnapshot / 快照读取结果，专项测试覆盖不直接引用任务、XP ledger、Streak 入口。
+4. 勿扰快照下低动效、无提醒气泡、无声音、无强反馈；提醒文案为泛化文案，不展示敏感任务标题。
+5. 关闭桌宠只关闭桌宠窗口端口，不退出主 App。
+6. 实现 Agent 报告 `dart analyze` 指定变更文件通过、`flutter test` 全量通过、`flutter build windows --debug` 通过；`flutter analyze` 遇到工具侧 LSP JSON 截断异常，未产出代码诊断。
+
+N6-I-111 已完成：
+
+1. 变更范围为 `apps/list_monster_app/android/**`。
+2. Android Widget receiver、provider XML、RemoteViews 布局和资源已注册。
+3. 数据源只读 CompanionSnapshot JSON SharedPreferences，不引用任务、XP、Streak 计算入口。
+4. 展示怪兽状态帧占位 / assetId、今日进度、Streak、激励、前日反馈、过期 / 空态文案。
+5. 怪兽帧 deep link 到怪兽页；进度、激励、反馈、过期态 deep link 到今日页并携带刷新意图。
+6. 无勾选控件，不发任务完成、XP、Streak、怪兽状态变更事件；当前未接 Glance 依赖，保留 Glance 迁移点。
+7. 实现 Agent 报告 `assembleDebug` 通过。
+
+`QA-N6-D-001` 复检裁决为 pass：
+
+1. PC 桌宠打开 / 关闭入口、`desktop_pet_on` / `desktop_pet_off` 状态、关闭不退出主 App 通过。
+2. PC 桌宠只读 CompanionSnapshot / 快照读取结果，不直接读取任务、XP ledger、Streak 计算入口。
+3. PC 桌宠勿扰低动效、无提醒气泡、无声音、无强反馈、隐私泛化文案通过。
+4. Android Widget 原生壳配置、Manifest receiver、provider XML、RemoteViews 布局和资源通过。
+5. Android Widget 只读 CompanionSnapshot JSON SharedPreferences，不访问任务、XP、Streak 计算入口。
+6. Android Widget 状态帧、今日进度、Streak、激励、前日反馈、过期 / 空态文案和 deep link 刷新意图通过。
+7. Android Widget 无勾选控件，不发任务完成、XP、Streak、怪兽状态变更事件；当前为 RemoteViews 原生壳，已保留 Glance 迁移点。
+8. `flutter test` 64 项通过，`dart analyze .` 通过，`flutter build windows --debug` 通过，`flutter build apk --debug` 通过。
+9. 风险备注：未跟踪 `.codex/`、`AGENTS.md`、预览截图不计实现越界；本轮未做真机桌面 Widget 点击流转验证。
+
+Wave D 判定：通过 QA，可提交。提交后启动 `N6-I-112` 节点 6 端到端冻结前总验收。

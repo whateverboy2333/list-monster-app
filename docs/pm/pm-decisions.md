@@ -394,3 +394,19 @@ Android Widget 点击怪兽状态帧进入怪兽页；点击今日进度、今�
 结论：
 
 账号、游客、游客合并任务和注销冷静期领域模型新建独立 `packages/account_domain/`。`sync_domain` 只引用账号相关事件事实和冲突策略，不承载账号状态机本体；App 接线后续再通过 `apps/list_monster_app/lib/account/**` 消费该包。
+
+## D-043: 节点 6 桌宠首轮技术边界
+
+状态：已裁决
+
+结论：
+
+PC 第二窗口桌宠首轮只做可验证基础壳：主 App 内提供打开 / 关闭入口，状态只保留 `desktop_pet_on` / `desktop_pet_off`，桌宠视图只读 CompanionSnapshot。首轮不引入第三方窗口管理依赖，不做透明、置顶、点击穿透、拖拽和复杂动画；这些进入后续体验优化。
+
+## D-044: 节点 6 Android Widget 首轮技术边界
+
+状态：已裁决
+
+结论：
+
+Android Widget 首轮优先采用 Glance 原生壳，但若当前 Flutter Android 工程模板或本机 Gradle 环境不适合一次接入完整 Glance，可先落地等价的原生 Widget 壳和配置占位。无论采用 Glance 还是占位壳，Widget 必须只读取持久化 CompanionSnapshot，不提供组件内勾选任务，不产生任务完成、XP、Streak 或怪兽状态变更事件。

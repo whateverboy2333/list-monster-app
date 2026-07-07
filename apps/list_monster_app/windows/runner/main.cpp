@@ -22,12 +22,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
 
+  bool is_desktop_pet_window = false;
+  for (const auto& argument : command_line_arguments) {
+    if (argument == "--desktop-pet-window") {
+      is_desktop_pet_window = true;
+      break;
+    }
+  }
+
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 
   FlutterWindow window(project);
-  Win32Window::Point origin(10, 10);
-  Win32Window::Size size(1280, 720);
-  if (!window.Create(L"list_monster_app", origin, size)) {
+  Win32Window::Point origin = is_desktop_pet_window
+                                  ? Win32Window::Point(40, 40)
+                                  : Win32Window::Point(10, 10);
+  Win32Window::Size size = is_desktop_pet_window
+                               ? Win32Window::Size(360, 420)
+                               : Win32Window::Size(1280, 720);
+  const wchar_t* title = is_desktop_pet_window
+                             ? L"List Monster Desktop Pet"
+                             : L"list_monster_app";
+  if (!window.Create(title, origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
