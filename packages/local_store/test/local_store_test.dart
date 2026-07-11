@@ -68,111 +68,165 @@ void main() {
       expect(companionSnapshot?.payload['monsterMood'], 'idle');
     });
 
-    test('overwrites account, task, notification, and snapshot records', () async {
-      final store = MemoryLocalStore();
-      final first = DateTime.utc(2026, 7, 7, 9);
-      final second = DateTime.utc(2026, 7, 7, 10);
+    test(
+      'overwrites account, task, notification, and snapshot records',
+      () async {
+        final store = MemoryLocalStore();
+        final first = DateTime.utc(2026, 7, 7, 9);
+        final second = DateTime.utc(2026, 7, 7, 10);
 
-      await store.saveAccountState(
-        LocalAccountState(
-          accountId: 'guest-1',
-          isGuest: true,
-          updatedAt: first,
-        ),
-      );
-      await store.saveAccountState(
-        LocalAccountState(
-          accountId: 'user-1',
-          isGuest: false,
-          updatedAt: second,
-        ),
-      );
-      await store.saveTaskSnapshot(
-        LocalTaskSnapshot(
-          taskId: 'task-1',
-          updatedAt: first,
-          revision: 1,
-          payload: {'title': 'old'},
-        ),
-      );
-      await store.saveTaskSnapshot(
-        LocalTaskSnapshot(
-          taskId: 'task-1',
-          updatedAt: second,
-          revision: 2,
-          payload: {'title': 'new'},
-        ),
-      );
-      await store.saveNotificationSettings(
-        LocalNotificationSettings(updatedAt: first, enabled: true),
-      );
-      await store.saveNotificationSettings(
-        LocalNotificationSettings(updatedAt: second, enabled: false),
-      );
-      await store.saveCompanionSnapshot(
-        LocalCompanionSnapshot(
-          snapshotId: 'snapshot-old',
-          generatedAt: first,
-          expiresAt: second,
-        ),
-      );
-      await store.saveCompanionSnapshot(
-        LocalCompanionSnapshot(
-          snapshotId: 'snapshot-new',
-          generatedAt: second,
-          expiresAt: second.add(const Duration(minutes: 5)),
-        ),
-      );
+        await store.saveAccountState(
+          LocalAccountState(
+            accountId: 'guest-1',
+            isGuest: true,
+            updatedAt: first,
+          ),
+        );
+        await store.saveAccountState(
+          LocalAccountState(
+            accountId: 'user-1',
+            isGuest: false,
+            updatedAt: second,
+          ),
+        );
+        await store.saveTaskSnapshot(
+          LocalTaskSnapshot(
+            taskId: 'task-1',
+            updatedAt: first,
+            revision: 1,
+            payload: {'title': 'old'},
+          ),
+        );
+        await store.saveTaskSnapshot(
+          LocalTaskSnapshot(
+            taskId: 'task-1',
+            updatedAt: second,
+            revision: 2,
+            payload: {'title': 'new'},
+          ),
+        );
+        await store.saveNotificationSettings(
+          LocalNotificationSettings(updatedAt: first, enabled: true),
+        );
+        await store.saveNotificationSettings(
+          LocalNotificationSettings(updatedAt: second, enabled: false),
+        );
+        await store.saveCompanionSnapshot(
+          LocalCompanionSnapshot(
+            snapshotId: 'snapshot-old',
+            generatedAt: first,
+            expiresAt: second,
+          ),
+        );
+        await store.saveCompanionSnapshot(
+          LocalCompanionSnapshot(
+            snapshotId: 'snapshot-new',
+            generatedAt: second,
+            expiresAt: second.add(const Duration(minutes: 5)),
+          ),
+        );
 
-      final account = await store.readAccountState();
-      final task = await store.readTaskSnapshot('task-1');
-      final tasks = await store.readTaskSnapshots();
-      final notificationSettings = await store.readNotificationSettings();
-      final companionSnapshot = await store.readCompanionSnapshot(now: second);
+        final account = await store.readAccountState();
+        final task = await store.readTaskSnapshot('task-1');
+        final tasks = await store.readTaskSnapshots();
+        final notificationSettings = await store.readNotificationSettings();
+        final companionSnapshot = await store.readCompanionSnapshot(
+          now: second,
+        );
 
-      expect(account?.accountId, 'user-1');
-      expect(account?.isGuest, isFalse);
-      expect(task?.revision, 2);
-      expect(task?.payload['title'], 'new');
-      expect(tasks, hasLength(1));
-      expect(notificationSettings?.enabled, isFalse);
-      expect(companionSnapshot?.snapshotId, 'snapshot-new');
-    });
+        expect(account?.accountId, 'user-1');
+        expect(account?.isGuest, isFalse);
+        expect(task?.revision, 2);
+        expect(task?.payload['title'], 'new');
+        expect(tasks, hasLength(1));
+        expect(notificationSettings?.enabled, isFalse);
+        expect(companionSnapshot?.snapshotId, 'snapshot-new');
+      },
+    );
 
-    test('appends sync queue items in order and can replace the queue', () async {
+    test(
+      'appends sync queue items in order and can replace the queue',
+      () async {
+        final store = MemoryLocalStore();
+        final now = DateTime.utc(2026, 7, 7, 11);
+
+        await store.appendSyncQueueItem(
+          LocalSyncQueueItem(
+            itemId: 'queue-1',
+            operation: 'task.complete',
+            enqueuedAt: now,
+            payload: {'taskId': 'task-1'},
+          ),
+        );
+        await store.appendSyncQueueItem(
+          LocalSyncQueueItem(
+            itemId: 'queue-2',
+            operation: 'task.rename',
+            enqueuedAt: now.add(const Duration(seconds: 1)),
+            payload: {'taskId': 'task-1'},
+          ),
+        );
+
+        final appended = await store.readSyncQueue();
+        expect(appended.map((item) => item.itemId), ['queue-1', 'queue-2']);
+
+        await store.replaceSyncQueue([
+          LocalSyncQueueItem(
+            itemId: 'queue-3',
+            operation: 'task.sync',
+            enqueuedAt: now.add(const Duration(seconds: 2)),
+          ),
+        ]);
+
+        final replaced = await store.readSyncQueue();
+        expect(replaced.map((item) => item.itemId), ['queue-3']);
+      },
+    );
+
+    test('deduplicates stable operations and updates replay status', () async {
       final store = MemoryLocalStore();
       final now = DateTime.utc(2026, 7, 7, 11);
 
       await store.appendSyncQueueItem(
         LocalSyncQueueItem(
-          itemId: 'queue-1',
-          operation: 'task.complete',
+          itemId: 'queue-original',
+          operation: 'task_complete',
+          operationId: 'op-1',
+          eventId: 'event-1',
+          sourceEventId: 'source-1',
+          sequence: 1,
           enqueuedAt: now,
-          payload: {'taskId': 'task-1'},
         ),
       );
       await store.appendSyncQueueItem(
         LocalSyncQueueItem(
-          itemId: 'queue-2',
-          operation: 'task.rename',
+          itemId: 'queue-duplicate',
+          operation: 'task_complete',
+          operationId: 'op-1',
+          eventId: 'event-1',
+          sourceEventId: 'source-1',
+          sequence: 2,
           enqueuedAt: now.add(const Duration(seconds: 1)),
-          payload: {'taskId': 'task-1'},
+          dedupeKey: 'different-helper-key',
         ),
       );
 
-      final appended = await store.readSyncQueue();
-      expect(appended.map((item) => item.itemId), ['queue-1', 'queue-2']);
+      final original = await store.readSyncQueueItem('op-1');
+      expect(original?.itemId, 'queue-original');
+      expect(await store.readSyncQueue(), hasLength(1));
 
-      await store.replaceSyncQueue([
-        LocalSyncQueueItem(
-          itemId: 'queue-3',
-          operation: 'task.sync',
-          enqueuedAt: now.add(const Duration(seconds: 2)),
+      await store.updateSyncQueueItem(
+        original!.copyWith(
+          status: LocalSyncQueueStatus.failed,
+          attempt: 1,
+          lastErrorCode: 'offline',
         ),
-      ]);
+      );
 
-      final replaced = await store.readSyncQueue();
-      expect(replaced.map((item) => item.itemId), ['queue-3']);
+      final updated = await store.readSyncQueueItem('op-1');
+      expect(updated?.status, LocalSyncQueueStatus.failed);
+      expect(updated?.attempt, 1);
+      expect(updated?.lastErrorCode, 'offline');
     });
 
     test('does not return expired companion snapshots', () async {

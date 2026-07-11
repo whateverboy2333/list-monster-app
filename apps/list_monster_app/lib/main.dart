@@ -6,6 +6,7 @@ import 'package:account_domain/account_domain.dart';
 import 'package:companion_contract/companion_contract.dart';
 import 'package:monster_domain/monster_domain.dart';
 import 'package:sprite_runtime/sprite_runtime.dart';
+import 'package:sync_domain/sync_domain.dart';
 import 'package:task_domain/task_domain.dart';
 import 'package:ui_kit/ui_kit.dart';
 
@@ -14,6 +15,7 @@ import 'companion_snapshot/android_widget_bridge.dart';
 import 'companion_snapshot/companion_snapshot_refresh_service.dart';
 import 'desktop_pet/desktop_pet.dart';
 import 'language_preference_store.dart';
+import 'sync/app_sync_controller.dart';
 import 'task_system_controller.dart';
 
 void main(List<String> args) {
@@ -485,15 +487,25 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
   late final CompanionSnapshotRefreshService _companionSnapshotService;
   late final DesktopPetController _desktopPetController;
   late final CompanionSnapshotWidgetBridge _androidWidgetBridge;
+  late final AppSyncController _appSyncController;
+  final Set<String> _queuedSyncOperationIds = <String>{};
+  Future<void> _syncQueueChain = Future<void>.value();
+  Future<void> _snapshotRefreshChain = Future<void>.value();
+  int _observedTaskEventCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _taskSystem = widget.taskSystemController ?? TaskSystemController();
-    _ownsTaskSystem = widget.taskSystemController == null;
     _accountSession =
         widget.accountSessionController ?? AccountSessionController();
     _ownsAccountSession = widget.accountSessionController == null;
+    _appSyncController = AppSyncController(
+      localStore: _accountSession.localStore,
+    );
+    _taskSystem =
+        widget.taskSystemController ??
+        TaskSystemController(syncHandoff: _enqueueSyncOperation);
+    _ownsTaskSystem = widget.taskSystemController == null;
     _androidWidgetBridge =
         widget.androidWidgetBridge ??
         MethodChannelCompanionSnapshotWidgetBridge();
@@ -508,6 +520,9 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
     );
     _accountSession.restore();
     _taskSystem.recordAppOpened(widget.openedAt ?? DateTime.now());
+    _observedTaskEventCount = _taskSystem.events.length;
+    _taskSystem.addListener(_handleTaskSystemChanged);
+    _scheduleSyncHandoff();
     _androidWidgetBridge.setWidgetLaunchIntentHandler(
       _handleAndroidWidgetLaunchIntent,
     );
@@ -516,6 +531,7 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
 
   @override
   void dispose() {
+    _taskSystem.removeListener(_handleTaskSystemChanged);
     _androidWidgetBridge.setWidgetLaunchIntentHandler(null);
     _desktopPetController.dispose();
     if (_ownsAccountSession) {
@@ -525,6 +541,90 @@ class _ListMonsterShellState extends State<ListMonsterShell> {
       _taskSystem.dispose();
     }
     super.dispose();
+  }
+
+  void _handleTaskSystemChanged() {
+    final events = _taskSystem.events;
+    final newEvents = events.length <= _observedTaskEventCount
+        ? const <Object>[]
+        : events.sublist(_observedTaskEventCount);
+    _observedTaskEventCount = events.length;
+
+    _scheduleSyncHandoff();
+    _scheduleCompanionSnapshotRefresh(_snapshotTriggerFor(newEvents));
+  }
+
+  CompanionSnapshotRefreshTrigger _snapshotTriggerFor(Iterable<Object> events) {
+    if (events.any((event) => event is TaskCompletionUndoneEvent)) {
+      return CompanionSnapshotRefreshTrigger.taskCompletionUndone;
+    }
+    if (events.any((event) => event is TaskCompletedEvent)) {
+      return CompanionSnapshotRefreshTrigger.taskCompleted;
+    }
+    if (events.any((event) => event is TaskRestoredEvent)) {
+      return CompanionSnapshotRefreshTrigger.taskRestored;
+    }
+    if (events.any((event) => event is TaskCreatedEvent)) {
+      return CompanionSnapshotRefreshTrigger.taskCreated;
+    }
+    return CompanionSnapshotRefreshTrigger.growthChanged;
+  }
+
+  Future<void> _enqueueSyncOperation(SyncQueueDraft operation) {
+    _syncQueueChain = _syncQueueChain.then(
+      (_) => _persistSyncOperation(operation),
+    );
+    return _syncQueueChain;
+  }
+
+  Future<void> _persistSyncOperation(SyncQueueDraft operation) async {
+    final operationId = operation.operationId;
+    if (_queuedSyncOperationIds.contains(operationId)) {
+      return;
+    }
+
+    try {
+      await _appSyncController.enqueueTaskOperation(
+        operationType: operation.operationType,
+        taskId: operation.entityId,
+        eventId: operation.eventId,
+        operationId: operation.operationId,
+        sourceEventId: operation.sourceEventId,
+        enqueuedAt: operation.enqueuedAt,
+        payload: operation.payload,
+      );
+      _queuedSyncOperationIds.add(operationId);
+    } catch (_) {
+      // Sync is best-effort; the task's local state must remain responsive.
+    }
+  }
+
+  void _scheduleSyncHandoff() {
+    for (final operation in _taskSystem.syncHandoffOperations) {
+      unawaited(_enqueueSyncOperation(operation));
+    }
+  }
+
+  void _scheduleCompanionSnapshotRefresh(
+    CompanionSnapshotRefreshTrigger trigger,
+  ) {
+    _snapshotRefreshChain = _snapshotRefreshChain.then((_) async {
+      try {
+        final desktopPetIsOn = _desktopPetController.isOn;
+        final snapshot = await _companionSnapshotService.refreshForTrigger(
+          _taskSystem,
+          trigger,
+          desktopPetState: desktopPetIsOn
+              ? CompanionDesktopPetState.enabled
+              : CompanionDesktopPetState.disabled,
+        );
+        if (desktopPetIsOn) {
+          await _desktopPetController.open(snapshot);
+        }
+      } catch (_) {
+        // Snapshot persistence and bridge delivery are best-effort.
+      }
+    });
   }
 
   @override

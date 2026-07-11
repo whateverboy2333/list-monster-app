@@ -70,11 +70,19 @@
 
 详见 [node-roadmap-freeze.md](node-roadmap-freeze.md)。
 
-## 最近完成节点：节点 6
+## 最近完成节点：节点 7
 
-节点 6 名称：账号 / 同步 / 通知 / 陪伴场域完成。
+节点 7 名称：QA 冻结与 MVP Beta。
 
-范围：
+最终结果：完成。`N7-QA-FINAL-002` 的 13 项冻结矩阵通过；PM Web 预览发现的平台兼容 P0 已由 `N7-R-002B` 修复，`N7-QA-R-002B` 独立复检与 PM 重验均通过。
+
+关键证据：App 88 项测试、静态分析、全部 package 测试与分析、Web Release、Windows Debug、Android Debug APK、真实 Web 首屏与核心交互全部通过。
+
+节点 7 交付摘要详见 [node-7-delivery-summary.md](node-7-delivery-summary.md)。
+
+## 已完成范围
+
+节点 6 范围：
 
 ```text
 游客模式
@@ -95,11 +103,24 @@ CompanionSnapshot
 
 节点 6 交付摘要详见 [node-6-delivery-summary.md](node-6-delivery-summary.md)。
 
-## 当前推进节点：节点 7
+## 当前推进节点
 
-节点 7 名称：QA 冻结与 MVP Beta。
+冻结路线图中的节点 1 至节点 7 已全部完成，当前没有已批准的新开发节点。节点 7 启动与返工记录详见 [node-7-kickoff.md](node-7-kickoff.md)。
 
-状态：待启动。节点 6 已通过 `QA-N6-FINAL-002` 总验收；下一步进入 P0 全链路冻结、Beta 可试用质量门和缺陷修复。
+## 编制注册表
+
+| 角色 | 线程昵称 | Agent ID | 状态 | 已完成任务数 |
+|---|---|---|---|---:|
+| frontend_dev | FE-Alpha（历史） | `019f3cdc-58d6-76f2-9c01-738c3830e543` | 已失效 | 1 |
+| frontend_dev | FE-Alpha | `019f4b51-2eb0-7971-a89b-2ffe2d1b8e97` | 已裁撤：线程系统错误 | 1 |
+| frontend_dev | FE-Beta | `019f4b5f-bd19-7bc0-a111-9c5f89a9c3cd` | 已裁撤：节点 7 收尾 | 1 |
+| frontend_dev | FE-Gamma（历史） | `019f3cdc-5b80-7c90-9568-86118071343f` | 已失效 | 2 |
+| frontend_dev | FE-Gamma-2（工具昵称 FE-Alpha） | `019f4e9f-7a50-7c12-873c-d5b1fc9ca713` | 已裁撤：节点 7 收尾 | 2 |
+| backend_dev | BE-Alpha | `019f4b3b-82a9-7790-89b8-a453a4f11950` | 已裁撤：线程记录已失效 | 1 |
+
+节点 7 QA 临时实例：Darwin 已终止；Curie、Ramanujan、Erdos、Mencius、Aquinas、Kepler、Noether、Carson、Singer 已出具裁决并关闭。
+
+节点 7 编制交接：BE-Alpha 完成离线队列、顺序回放、幂等与失败阻断底座；FE-Beta 完成无压清理和生命周期非阻塞交接补证；FE-Gamma-2 完成生命周期快照装配、Widget / 桌宠刷新及 Web 平台桥修复。后续风险集中在真实云接入与 Android 真机流转。
 
 范围：
 

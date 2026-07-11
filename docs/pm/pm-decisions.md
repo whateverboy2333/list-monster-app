@@ -410,3 +410,10 @@ PC 第二窗口桌宠首轮只做可验证基础壳：主 App 内提供打开 / 
 结论：
 
 Android Widget 首轮优先采用 Glance 原生壳，但若当前 Flutter Android 工程模板或本机 Gradle 环境不适合一次接入完整 Glance，可先落地等价的原生 Widget 壳和配置占位。无论采用 Glance 还是占位壳，Widget 必须只读取持久化 CompanionSnapshot，不提供组件内勾选任务，不产生任务完成、XP、Streak 或怪兽状态变更事件。
+## D-045: 节点 7 package 测试运行器口径
+
+状态：已裁决
+
+结论：
+
+节点 7 全量验证必须按 package 类型选择测试运行器。纯 Dart package 使用 `dart analyze .` 与 `dart test`；依赖 Flutter SDK 或测试导入 `flutter_test` 的 Flutter package 使用 `dart analyze .` 与 `flutter test`。不得因对 Flutter package 执行 `dart test` 产生的 `package:test` 启动失败，直接裁决为代码依赖缺陷。

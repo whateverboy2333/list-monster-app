@@ -41,6 +41,36 @@ void main() {
     },
   );
 
+  test('task operation factories preserve stable identities and order', () {
+    final complete = SyncQueueDraft.taskComplete(
+      taskId: 'task_1',
+      operationId: 'op_complete',
+      eventId: 'evt_complete',
+      sourceEventId: 'evt_task_completed',
+      sequence: 4,
+      enqueuedAt: DateTime.utc(2026, 7, 7, 8),
+    );
+    final undo = SyncQueueDraft.taskUndoCompletion(
+      taskId: 'task_1',
+      operationId: 'op_undo',
+      eventId: 'evt_undo',
+    );
+    final restore = SyncQueueDraft.taskRestore(
+      taskId: 'task_1',
+      operationId: 'op_restore',
+      eventId: 'evt_restore',
+    );
+
+    expect(complete.operationId, 'op_complete');
+    expect(complete.eventId, 'evt_complete');
+    expect(complete.sourceEventId, 'evt_task_completed');
+    expect(complete.sequence, 4);
+    expect(undo.operationType, SyncOperationType.taskUndoCompletion);
+    expect(restore.operationType, SyncOperationType.taskRestore);
+    expect(const SyncQueueRetry(attempt: 1, maxAttempts: 2).canRetry, isTrue);
+    expect(const SyncQueueRetry(attempt: 2, maxAttempts: 2).canRetry, isFalse);
+  });
+
   test('detects concurrent task completion and cancellation conflict', () {
     const complete = SyncQueueDraft(
       operationType: SyncOperationType.taskComplete,
@@ -74,6 +104,17 @@ void main() {
     expect(
       protectedFactForOperation(SyncOperationType.xpLedgerAppend),
       ProtectedSyncFact.xpLedger,
+    );
+  });
+
+  test('streak ledger remains ordered and non-LWW', () {
+    final policy = syncPolicyForProtectedFact(ProtectedSyncFact.streak);
+
+    expect(policy.strategy, SyncMergeStrategy.orderedLedger);
+    expect(policy.allowsLastWriteWins, isFalse);
+    expect(
+      protectedFactForOperation(SyncOperationType.streakRecord),
+      ProtectedSyncFact.streak,
     );
   });
 

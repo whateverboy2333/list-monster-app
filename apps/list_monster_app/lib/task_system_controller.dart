@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:monster_domain/monster_domain.dart';
+import 'package:sync_domain/sync_domain.dart';
 import 'package:task_domain/task_domain.dart';
 
 enum LongTermBreakdownSource { manual, ai }
+
+typedef TaskSyncHandoff = FutureOr<void> Function(SyncQueueDraft operation);
 
 class TaskSystemController extends ChangeNotifier {
   TaskSystemController({
@@ -14,6 +19,7 @@ class TaskSystemController extends ChangeNotifier {
     Map<DateTime, int> priorCreatedTaskCounts = const <DateTime, int>{},
     this.userId = 'local_guest',
     this.timezoneId = 'Asia/Shanghai',
+    this.syncHandoff,
   }) : today = _dateOnly(today ?? DateTime.now()),
        _fixedNow = now,
        _lastOpenedDate = lastOpenedDate == null
@@ -60,6 +66,7 @@ class TaskSystemController extends ChangeNotifier {
 
   final String userId;
   final String timezoneId;
+  final TaskSyncHandoff? syncHandoff;
   final DateTime today;
   final DateTime? _fixedNow;
   MonsterSnapshot monster;
@@ -69,6 +76,7 @@ class TaskSystemController extends ChangeNotifier {
   final List<LongTermTask> _longTermTasks = [];
   final List<ReminderIntent> _reminderIntents = [];
   final List<XpLedgerEntry> _xpLedger = [];
+  final List<SyncQueueDraft> _syncHandoffOperations = [];
   final List<Object> _events = [];
   final Map<String, int> _seedCompletedEligibleCounts = {};
   final Map<String, int> _seedCreatedTaskCounts = {};
@@ -138,6 +146,8 @@ class TaskSystemController extends ChangeNotifier {
   List<ReminderIntent> get reminderIntents =>
       List.unmodifiable(_reminderIntents);
   List<XpLedgerEntry> get xpLedger => List.unmodifiable(_xpLedger);
+  List<SyncQueueDraft> get syncHandoffOperations =>
+      List.unmodifiable(_syncHandoffOperations);
   List<Object> get events => List.unmodifiable(_events);
 
   int get completedRewardableCount {
@@ -418,6 +428,14 @@ class TaskSystemController extends ChangeNotifier {
 
     _tasks[index] = result.task;
     _events.add(result.event);
+    _handoffTaskEvent(
+      operationType: SyncOperationType.taskComplete,
+      taskId: result.event.taskId,
+      eventId: result.event.eventId,
+      occurredAt: result.event.completedAt,
+      eventName: result.event.eventName,
+      payload: result.event.payload,
+    );
 
     if (isFormalCompletion) {
       _grantTaskCompletionXp(result.event);
@@ -457,6 +475,14 @@ class TaskSystemController extends ChangeNotifier {
 
     _tasks[index] = result.task;
     _events.add(result.event);
+    _handoffTaskEvent(
+      operationType: SyncOperationType.taskUndoCompletion,
+      taskId: result.event.taskId,
+      eventId: result.event.eventId,
+      occurredAt: result.event.undoneAt,
+      eventName: result.event.eventName,
+      payload: result.event.payload,
+    );
     _revertXpForCompletion(
       result.event.originalCompletedEventId,
       revertEventId: result.event.eventId,
@@ -525,6 +551,14 @@ class TaskSystemController extends ChangeNotifier {
     );
     _tasks[index] = result.task;
     _events.add(result.event);
+    _handoffTaskEvent(
+      operationType: SyncOperationType.taskRestore,
+      taskId: result.event.taskId,
+      eventId: result.event.eventId,
+      occurredAt: result.event.restoredAt,
+      eventName: result.event.eventName,
+      payload: result.event.payload,
+    );
     _syncMonsterMood();
 
     notifyListeners();
@@ -1101,6 +1135,38 @@ class TaskSystemController extends ChangeNotifier {
       moodState: mood,
       currentAction: actionKey ?? _defaultActionKey(mood),
       sleepPetCount: _sleepPetCount,
+    );
+  }
+
+  void _handoffTaskEvent({
+    required SyncOperationType operationType,
+    required String taskId,
+    required String eventId,
+    required DateTime occurredAt,
+    required String eventName,
+    required Map<String, Object?> payload,
+  }) {
+    final operation = SyncQueueDraft(
+      operationType: operationType,
+      entityType: 'task',
+      entityId: taskId,
+      eventId: eventId,
+      operationId: eventId,
+      sourceEventId: eventId,
+      enqueuedAt: occurredAt,
+      payload: <String, Object?>{'eventName': eventName, ...payload},
+    );
+    _syncHandoffOperations.add(operation);
+
+    final handoff = syncHandoff;
+    if (handoff == null) {
+      return;
+    }
+
+    unawaited(
+      Future<void>.microtask(
+        () => handoff(operation),
+      ).catchError((Object _) {}),
     );
   }
 

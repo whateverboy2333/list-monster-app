@@ -31,6 +31,23 @@ class SyncQueueRetry {
   final int attempt;
   final int maxAttempts;
   final String? lastErrorCode;
+
+  bool get canRetry => attempt < maxAttempts;
+
+  SyncQueueRetry copyWith({
+    int? attempt,
+    int? maxAttempts,
+    String? lastErrorCode,
+    bool clearLastErrorCode = false,
+  }) {
+    return SyncQueueRetry(
+      attempt: attempt ?? this.attempt,
+      maxAttempts: maxAttempts ?? this.maxAttempts,
+      lastErrorCode: clearLastErrorCode
+          ? null
+          : lastErrorCode ?? this.lastErrorCode,
+    );
+  }
 }
 
 class SyncQueueDraft {
@@ -39,16 +56,97 @@ class SyncQueueDraft {
     required this.entityType,
     required this.entityId,
     required this.eventId,
+    String? operationId,
+    String? sourceEventId,
+    this.sequence = 0,
+    this.enqueuedAt,
     this.payload = const <String, Object?>{},
     this.baseRevision,
     this.status = SyncQueueStatus.pending,
     this.retry = const SyncQueueRetry(),
-  });
+  }) : operationId = operationId ?? eventId,
+       sourceEventId = sourceEventId ?? eventId;
+
+  factory SyncQueueDraft.taskComplete({
+    required String taskId,
+    required String eventId,
+    String? operationId,
+    String? sourceEventId,
+    int sequence = 0,
+    DateTime? enqueuedAt,
+    Map<String, Object?> payload = const <String, Object?>{},
+    int? baseRevision,
+  }) {
+    return SyncQueueDraft(
+      operationType: SyncOperationType.taskComplete,
+      entityType: 'task',
+      entityId: taskId,
+      eventId: eventId,
+      operationId: operationId,
+      sourceEventId: sourceEventId,
+      sequence: sequence,
+      enqueuedAt: enqueuedAt,
+      payload: payload,
+      baseRevision: baseRevision,
+    );
+  }
+
+  factory SyncQueueDraft.taskUndoCompletion({
+    required String taskId,
+    required String eventId,
+    String? operationId,
+    String? sourceEventId,
+    int sequence = 0,
+    DateTime? enqueuedAt,
+    Map<String, Object?> payload = const <String, Object?>{},
+    int? baseRevision,
+  }) {
+    return SyncQueueDraft(
+      operationType: SyncOperationType.taskUndoCompletion,
+      entityType: 'task',
+      entityId: taskId,
+      eventId: eventId,
+      operationId: operationId,
+      sourceEventId: sourceEventId,
+      sequence: sequence,
+      enqueuedAt: enqueuedAt,
+      payload: payload,
+      baseRevision: baseRevision,
+    );
+  }
+
+  factory SyncQueueDraft.taskRestore({
+    required String taskId,
+    required String eventId,
+    String? operationId,
+    String? sourceEventId,
+    int sequence = 0,
+    DateTime? enqueuedAt,
+    Map<String, Object?> payload = const <String, Object?>{},
+    int? baseRevision,
+  }) {
+    return SyncQueueDraft(
+      operationType: SyncOperationType.taskRestore,
+      entityType: 'task',
+      entityId: taskId,
+      eventId: eventId,
+      operationId: operationId,
+      sourceEventId: sourceEventId,
+      sequence: sequence,
+      enqueuedAt: enqueuedAt,
+      payload: payload,
+      baseRevision: baseRevision,
+    );
+  }
 
   final SyncOperationType operationType;
   final String entityType;
   final String entityId;
   final String eventId;
+  final String operationId;
+  final String sourceEventId;
+  final int sequence;
+  final DateTime? enqueuedAt;
   final Map<String, Object?> payload;
   final int? baseRevision;
   final SyncQueueStatus status;
@@ -56,7 +154,41 @@ class SyncQueueDraft {
 
   String get dedupeKey =>
       '${operationType.contractName}:$entityType:$entityId:$eventId';
+
+  String get identityKey => operationId;
+
+  SyncQueueDraft copyWith({
+    SyncOperationType? operationType,
+    String? entityType,
+    String? entityId,
+    String? eventId,
+    String? operationId,
+    String? sourceEventId,
+    int? sequence,
+    DateTime? enqueuedAt,
+    Map<String, Object?>? payload,
+    int? baseRevision,
+    SyncQueueStatus? status,
+    SyncQueueRetry? retry,
+  }) {
+    return SyncQueueDraft(
+      operationType: operationType ?? this.operationType,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      eventId: eventId ?? this.eventId,
+      operationId: operationId ?? this.operationId,
+      sourceEventId: sourceEventId ?? this.sourceEventId,
+      sequence: sequence ?? this.sequence,
+      enqueuedAt: enqueuedAt ?? this.enqueuedAt,
+      payload: payload ?? this.payload,
+      baseRevision: baseRevision ?? this.baseRevision,
+      status: status ?? this.status,
+      retry: retry ?? this.retry,
+    );
+  }
 }
+
+typedef SyncOperationConsumer = Future<void> Function(SyncQueueDraft operation);
 
 enum ProtectedSyncFact {
   xpLedger,

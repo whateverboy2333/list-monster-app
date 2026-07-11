@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -171,16 +172,23 @@ class AndroidWidgetSnapshotReadResult {
 class MethodChannelCompanionSnapshotWidgetBridge
     implements CompanionSnapshotWidgetBridge {
   MethodChannelCompanionSnapshotWidgetBridge()
-    : this.withChannel(const MethodChannel(androidWidgetBridgeChannelName));
+    : _channel = const MethodChannel(androidWidgetBridgeChannelName),
+      _platformSupported = isAndroidWidgetPlatform();
 
   @visibleForTesting
-  MethodChannelCompanionSnapshotWidgetBridge.withChannel(this._channel);
+  MethodChannelCompanionSnapshotWidgetBridge.withChannel(this._channel)
+    : _platformSupported = true;
 
   final MethodChannel _channel;
+  final bool _platformSupported;
   AndroidWidgetLaunchIntentHandler? _handler;
 
   @override
   Future<void> persistSnapshot(LocalCompanionSnapshot snapshot) async {
+    if (!_platformSupported) {
+      return;
+    }
+
     final persistedJson = encodeAndroidWidgetSnapshot(snapshot);
     try {
       await _channel
@@ -202,6 +210,10 @@ class MethodChannelCompanionSnapshotWidgetBridge
 
   @override
   Future<AndroidWidgetLaunchIntent?> consumeInitialWidgetLaunchIntent() async {
+    if (!_platformSupported) {
+      return null;
+    }
+
     try {
       final result = await _channel.invokeMethod<Object?>(
         'consumeInitialWidgetLaunchIntent',
@@ -233,6 +245,15 @@ class MethodChannelCompanionSnapshotWidgetBridge
       return null;
     });
   }
+}
+
+@visibleForTesting
+bool isAndroidWidgetPlatform({bool? isWeb, bool? isAndroid}) {
+  final web = isWeb ?? kIsWeb;
+  if (web) {
+    return false;
+  }
+  return isAndroid ?? io.Platform.isAndroid;
 }
 
 String encodeAndroidWidgetSnapshot(LocalCompanionSnapshot snapshot) {

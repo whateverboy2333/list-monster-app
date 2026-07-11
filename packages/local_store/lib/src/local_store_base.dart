@@ -23,6 +23,10 @@ abstract interface class LocalStorePort {
 
   Future<List<LocalSyncQueueItem>> readSyncQueue();
 
+  Future<LocalSyncQueueItem?> readSyncQueueItem(String operationId);
+
+  Future<void> updateSyncQueueItem(LocalSyncQueueItem item);
+
   Future<void> replaceSyncQueue(List<LocalSyncQueueItem> items);
 
   Future<void> saveNotificationSettings(LocalNotificationSettings settings);
@@ -78,18 +82,99 @@ class LocalEventRecord {
   final Map<String, Object?> payload;
 }
 
+enum LocalSyncQueueStatus { pending, inFlight, succeeded, failed, conflicted }
+
 class LocalSyncQueueItem {
   LocalSyncQueueItem({
     required this.itemId,
     required this.operation,
     required this.enqueuedAt,
+    String? operationId,
+    String? eventId,
+    String? sourceEventId,
+    int? sequence,
+    this.baseRevision,
+    this.status = LocalSyncQueueStatus.pending,
+    this.attempt = 0,
+    this.maxAttempts = 5,
+    this.lastErrorCode,
+    this.completedAt,
+    String? dedupeKey,
     Map<String, Object?> payload = const {},
-  }) : payload = _copyJsonMap(payload);
+  }) : operationId =
+           operationId ?? _payloadString(payload, 'operationId') ?? itemId,
+       eventId = eventId ?? _payloadString(payload, 'eventId') ?? itemId,
+       sourceEventId =
+           sourceEventId ??
+           _payloadString(payload, 'sourceEventId') ??
+           eventId ??
+           _payloadString(payload, 'eventId') ??
+           itemId,
+       sequence = sequence ?? _payloadInt(payload, 'sequence') ?? 0,
+       dedupeKey = dedupeKey ?? _payloadString(payload, 'dedupeKey'),
+       payload = _copyJsonMap(payload);
 
   final String itemId;
   final String operation;
   final DateTime enqueuedAt;
+  final String operationId;
+  final String eventId;
+  final String sourceEventId;
+  final int sequence;
+  final int? baseRevision;
+  final LocalSyncQueueStatus status;
+  final int attempt;
+  final int maxAttempts;
+  final String? lastErrorCode;
+  final DateTime? completedAt;
+  final String? dedupeKey;
   final Map<String, Object?> payload;
+
+  String get identityKey => dedupeKey ?? operationId;
+
+  int get retryAttempt => attempt;
+
+  bool get canRetry => attempt < maxAttempts;
+
+  LocalSyncQueueItem copyWith({
+    String? itemId,
+    String? operation,
+    DateTime? enqueuedAt,
+    String? operationId,
+    String? eventId,
+    String? sourceEventId,
+    int? sequence,
+    int? baseRevision,
+    LocalSyncQueueStatus? status,
+    int? attempt,
+    int? maxAttempts,
+    String? lastErrorCode,
+    bool clearLastErrorCode = false,
+    DateTime? completedAt,
+    bool clearCompletedAt = false,
+    String? dedupeKey,
+    Map<String, Object?>? payload,
+  }) {
+    return LocalSyncQueueItem(
+      itemId: itemId ?? this.itemId,
+      operation: operation ?? this.operation,
+      enqueuedAt: enqueuedAt ?? this.enqueuedAt,
+      operationId: operationId ?? this.operationId,
+      eventId: eventId ?? this.eventId,
+      sourceEventId: sourceEventId ?? this.sourceEventId,
+      sequence: sequence ?? this.sequence,
+      baseRevision: baseRevision ?? this.baseRevision,
+      status: status ?? this.status,
+      attempt: attempt ?? this.attempt,
+      maxAttempts: maxAttempts ?? this.maxAttempts,
+      lastErrorCode: clearLastErrorCode
+          ? null
+          : lastErrorCode ?? this.lastErrorCode,
+      completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
+      dedupeKey: dedupeKey ?? this.dedupeKey,
+      payload: payload ?? this.payload,
+    );
+  }
 }
 
 class LocalNotificationSettings {
@@ -169,19 +254,59 @@ class MemoryLocalStore implements LocalStorePort {
 
   @override
   Future<void> appendSyncQueueItem(LocalSyncQueueItem item) async {
-    _syncQueue.add(item);
+    if (_syncQueue.any(
+      (queued) =>
+          queued.operationId == item.operationId ||
+          queued.identityKey == item.identityKey,
+    )) {
+      return;
+    }
+
+    final stored = item.sequence > 0
+        ? item
+        : item.copyWith(sequence: _nextSyncQueueSequence());
+    _syncQueue.add(stored);
   }
 
   @override
   Future<List<LocalSyncQueueItem>> readSyncQueue() async {
-    return List.unmodifiable(_syncQueue);
+    final ordered = List<LocalSyncQueueItem>.of(_syncQueue)
+      ..sort(_compareSyncQueueItems);
+    return List.unmodifiable(ordered);
+  }
+
+  @override
+  Future<LocalSyncQueueItem?> readSyncQueueItem(String operationId) async {
+    for (final item in _syncQueue) {
+      if (item.operationId == operationId || item.identityKey == operationId) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<void> updateSyncQueueItem(LocalSyncQueueItem item) async {
+    final index = _syncQueue.indexWhere(
+      (queued) =>
+          queued.itemId == item.itemId ||
+          queued.operationId == item.operationId ||
+          queued.identityKey == item.identityKey,
+    );
+    if (index == -1) {
+      await appendSyncQueueItem(item);
+      return;
+    }
+
+    _syncQueue[index] = item;
   }
 
   @override
   Future<void> replaceSyncQueue(List<LocalSyncQueueItem> items) async {
-    _syncQueue
-      ..clear()
-      ..addAll(items);
+    _syncQueue.clear();
+    for (final item in items) {
+      await appendSyncQueueItem(item);
+    }
   }
 
   @override
@@ -225,6 +350,40 @@ class MemoryLocalStore implements LocalStorePort {
     _notificationSettings = null;
     _companionSnapshot = null;
   }
+
+  int _nextSyncQueueSequence() {
+    var largest = 0;
+    for (final item in _syncQueue) {
+      if (item.sequence > largest) {
+        largest = item.sequence;
+      }
+    }
+    return largest + 1;
+  }
+}
+
+int _compareSyncQueueItems(LocalSyncQueueItem left, LocalSyncQueueItem right) {
+  final sequenceComparison = left.sequence.compareTo(right.sequence);
+  if (sequenceComparison != 0) {
+    return sequenceComparison;
+  }
+
+  final timeComparison = left.enqueuedAt.compareTo(right.enqueuedAt);
+  if (timeComparison != 0) {
+    return timeComparison;
+  }
+
+  return left.itemId.compareTo(right.itemId);
+}
+
+String? _payloadString(Map<String, Object?> payload, String key) {
+  final value = payload[key];
+  return value is String ? value : null;
+}
+
+int? _payloadInt(Map<String, Object?> payload, String key) {
+  final value = payload[key];
+  return value is int ? value : null;
 }
 
 Map<String, Object?> _copyJsonMap(Map<String, Object?> source) {
