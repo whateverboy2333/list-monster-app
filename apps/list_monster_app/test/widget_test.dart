@@ -6,9 +6,39 @@ import 'package:list_monster_app/main.dart';
 import 'package:list_monster_app/node3_core_loop.dart';
 import 'package:local_store/local_store.dart';
 import 'package:monster_domain/monster_domain.dart';
+import 'package:sprite_runtime/sprite_runtime.dart';
 import 'package:task_domain/task_domain.dart';
 
 void main() {
+  test('maps every domain stage to its matching visual stage', () {
+    expect(spriteStageFor(MonsterStage.egg), MonsterSpriteStage.egg);
+    expect(spriteStageFor(MonsterStage.child), MonsterSpriteStage.child);
+    expect(spriteStageFor(MonsterStage.teen), MonsterSpriteStage.teen);
+    expect(spriteStageFor(MonsterStage.adult), MonsterSpriteStage.adult);
+  });
+
+  testWidgets('uses the same stage sprite on Today and Monster pages', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ListMonsterApp());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('monster-sprite-image-egg')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('placeholder'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.egg_alt_outlined));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('monster-sprite-image-egg')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('placeholder'), findsNothing);
+  });
+
   testWidgets('shows the node 2 app shell', (tester) async {
     await tester.pumpWidget(const ListMonsterApp());
 

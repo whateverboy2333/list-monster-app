@@ -33,6 +33,15 @@ void main(List<String> args) {
 
 enum AppLanguage { zh, en }
 
+MonsterSpriteStage spriteStageFor(MonsterStage stage) {
+  return switch (stage) {
+    MonsterStage.egg => MonsterSpriteStage.egg,
+    MonsterStage.child => MonsterSpriteStage.child,
+    MonsterStage.teen => MonsterSpriteStage.teen,
+    MonsterStage.adult => MonsterSpriteStage.adult,
+  };
+}
+
 extension on AppLanguage {
   String get code {
     return switch (this) {
@@ -792,7 +801,9 @@ class _TodayTabState extends State<TodayTab> {
                 subtitle: strings.todaySubtitle,
               ),
               const SizedBox(height: 20),
-              MonsterSpritePlaceholder(
+              MonsterSprite(
+                stage: spriteStageFor(controller.monster.stage),
+                stageLabel: strings.monsterStage(controller.monster.stage),
                 moodLabel: strings.monsterMood(controller.monster.moodState),
                 actionLabel: strings.monsterAction(
                   controller.monster,
@@ -2052,9 +2063,14 @@ class MonsterTab extends StatelessWidget {
               subtitle: strings.monsterSubtitle,
             ),
             const SizedBox(height: 20),
-            MonsterSpritePlaceholder(
+            MonsterSprite(
+              stage: spriteStageFor(monster.stage),
+              stageLabel: strings.monsterStage(monster.stage),
               moodLabel: strings.monsterMood(monster.moodState),
-              actionLabel: strings.monsterStage(monster.stage),
+              actionLabel: strings.monsterAction(
+                monster,
+                controller.monsterActionLabel,
+              ),
             ),
             const SizedBox(height: 20),
             Text(
