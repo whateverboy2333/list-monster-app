@@ -1,0 +1,14 @@
+# 项目级 Codex 配置（放在仓库根目录的 .codex/config.toml）
+
+[agents]
+# 同时打开的 Agent 线程上限（默认 6，按机器性能和token预算调整）
+max_threads = 4
+
+# 嵌套深度：1 = 只有根会话(PM)能 spawn 子Agent，子Agent 不能再 spawn。
+# 这是指挥链唯一性的架构保证，除非有明确理由否则不要调大。
+max_depth = 1
+
+# 可选：给根会话(PM)指定一个推理更强的模型，工人用快模型（在各自 agent 文件里配）。
+# 模型名请以你的套餐实际可用列表为准，不确定就注释掉、继承默认。
+# model = "gpt-5.4"
+# model_reasoning_effort = "high"

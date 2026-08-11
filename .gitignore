@@ -2,11 +2,15 @@
 .flutter-plugins
 .flutter-plugins-dependencies
 .idea/
+.playwright-cli/
 *.iml
 build/
+dist/
 coverage/
 .packages
 .pub-cache/
 .pub/
 *.log
-
+shot*-out.json
+snap*-out.json
+webbridge-req-*.json
