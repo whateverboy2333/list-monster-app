@@ -1,0 +1,50 @@
+T-REPO-ARCHIVE-001 可逆隔离证据清单
+日期: 2026-08-11
+
+源路径:
+C:\Users\Administrator\Documents\Codex\Recovered_Old_PC\Documents\清单怪兽app
+
+归档路径:
+C:\Users\Administrator\Documents\Codex\Recovered_Old_PC\Documents\_ARCHIVE_DO_NOT_USE_清单怪兽app-c20254a-20260811
+
+操作:
+同一 PowerShell 进程使用 Move-Item -LiteralPath 执行同卷目录级重命名；未复制后删除，未移动父目录或其他资料。
+
+移动前:
+HEAD: c20254a36645493f220461ae016826685e3488fc
+文件总数: 4039（包含 .git、构建缓存与隐藏文件）
+git status:
+ M README.md
+ M docs/pm/agent-roster.md
+ M docs/pm/pm-decisions.md
+ M docs/pm/wave-0-control-board.md
+?? .codex/
+
+移动后:
+旧路径存在: false
+归档路径存在: true
+HEAD: c20254a36645493f220461ae016826685e3488fc
+文件总数: 4039（使用 Windows 扩展长度路径前缀复核）
+git status: 与移动前完全一致
+
+SHA-256（移动前后相同）:
+18C20BC04C3141FDC1BAB352FCC2C5E2B033BF770D311F819678DAD2E56DA96B  1866   .codex/agents/backend-dev.toml
+B4E8EE561C3DE8C3D9E6284F65C2DB143BD9D9219813C585B4D540372CDFDF1A  1839   .codex/agents/frontend-dev.toml
+4C1B0C8FA474EF63B02E4EAF983DE9FCB2A79F9E3998C77232E2C7B29FF5F4F8  2501   .codex/agents/qa-inspector.toml
+A83E76B01C87FB7886C1DEB384EDE29A49BD493AB02700ED44BF7B70071738B5  650    .codex/config.toml
+78597F6A219EB2684293D499BA700A7A416D16D7DCCC9EA163A4FBFD1956CE17  2195   docs/pm/agent-roster.md
+A9EE2FDEE75D10F1BBF6E842DAD1CEDA5BEDD8DBB9CD7879E051684799227DDF  15111  docs/pm/pm-decisions.md
+057D2189615BA0B9FF82E222AA2538BEC262C1E908023BB5B2E1C8AF78501415  8166   docs/pm/wave-0-control-board.md
+331DBED4870065A0C5DA9C65F06D5630581E5C0D12072323F22DC66B47200E93  2022   README.md
+
+前后活跃仓库健康锚点:
+主仓 master/HEAD/origin/master: fd41609a7e1ee17daeb9c2f03dc36f66add41b95
+Craft master/HEAD: c7cf805d03e80361f791ab1a60c43827a5105404
+Craft remote: 无
+Craft 工作树: 干净
+
+可逆恢复方法:
+在确认原旧路径仍不存在后，使用同一 PowerShell 的 Move-Item -LiteralPath，将归档路径原样重命名回源路径。不得复制后删除，不得覆盖已存在目录。
+
+已知边界:
+归档名称使少量深层 .git checkpoint 与构建缓存路径超过传统 Win32 路径长度；普通 Get-ChildItem 递归可能报告路径缺失，使用 \\?\ 扩展长度路径复核为 4039 个文件且无枚举错误。

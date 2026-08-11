@@ -15,11 +15,12 @@ Craft 可编辑设计工作区；先把两处活跃工作落入可恢复版本�
 | frontend_dev | Lovelace / FE-PC-Design | 待命 | 2 |
 | documentation | DOC-Alpha | 待命 | 6 |
 | repository_ops | Repo-Alpha | 已轮换：权限上下文无法接收用户授权 | 0 |
-| repository_ops | Repo-Beta | 在岗（Craft 快照收口） | 4 |
+| repository_ops | Repo-Beta | 在岗（T-REPO-ARCHIVE-001） | 5 |
 | qa_inspector | QA-REPO-SAFETY-001 | 已裁撤 | 0 |
 | qa_inspector | QA-REPO-SAFETY-001-R2 | 已裁撤 | 1 |
 | qa_inspector | QA-REPO-SAFETY-001-CLOSE | 已裁撤 | 1 |
 | qa_inspector | QA-CRAFT-SAFETY-001 | 已裁撤 | 1 |
+| qa_inspector | QA-CRAFT-SAFETY-001-CLOSE | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-CONTENT-005 | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-CONTENT-005-CLOSE | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-001 | 已裁撤 | 1 |
@@ -97,9 +98,11 @@ Craft 可编辑设计工作区；先把两处活跃工作落入可恢复版本�
 | T-REPO-QA-SAFETY-001-R2 | 复验五提交记录、非自指锚点与远端一致性 | QA-REPO-SAFETY-001-R2 | 已通过 | T-REPO-SAFETY-001-R2 |
 | T-REPO-SAFETY-001-CLOSE | 按 QA 通过裁决收口主仓安全任务记录 | Repo-Beta | 已完成：da65ee3 已推送 | T-REPO-QA-SAFETY-001-R2 |
 | T-REPO-QA-SAFETY-001-CLOSE | 只读复核主仓任务完成态与远端收口 | QA-REPO-SAFETY-001-CLOSE | 已通过 | T-REPO-SAFETY-001-CLOSE |
-| T-CRAFT-SAFETY-001 | 为 Craft 工作区建立本地版本快照 | Repo-Beta | QA 已通过，正在完成态收口 | T-REPO-SAFETY-001 |
+| T-CRAFT-SAFETY-001 | 为 Craft 工作区建立本地版本快照 | Repo-Beta | 已完成（收口 QA 通过） | T-REPO-SAFETY-001 |
 | T-CRAFT-QA-SAFETY-001 | 独立验收 Craft 本地快照与主仓索引 | QA-CRAFT-SAFETY-001 | 已通过 | T-CRAFT-SAFETY-001 |
-| T-CRAFT-SAFETY-001-CLOSE | 按 QA 通过裁决收口 Craft 快照记录 | Repo-Beta | 已派单 | T-CRAFT-QA-SAFETY-001 |
+| T-CRAFT-SAFETY-001-CLOSE | 按 QA 通过裁决收口 Craft 快照记录 | Repo-Beta | 已完成：fd41609 已推送 | T-CRAFT-QA-SAFETY-001 |
+| T-CRAFT-QA-SAFETY-001-CLOSE | 只读复核 Craft 快照完成态 | QA-CRAFT-SAFETY-001-CLOSE | 已通过 | T-CRAFT-SAFETY-001-CLOSE |
+| T-REPO-ARCHIVE-001 | 迁移唯一有效事实后隔离旧恢复副本 | Repo-Beta | 已派单 | T-REPO-SAFETY-001、T-CRAFT-SAFETY-001 |
 | T-REPO-ARCHIVE-001 | 迁移唯一有效事实后隔离旧恢复副本 | 待派单 | 用户已确认，等待主仓与 Craft 快照通过 | T-REPO-SAFETY-001-R1、T-CRAFT-SAFETY-001 |
 | T-DOC-CONTENT-005 | 整理当前项目内容地图与旧副本差异结论 | DOC-Alpha | 已完成 | T-REPO-IDENTITY-001 |
 | T-DOC-QA-CONTENT-005 | 独立质检内容地图与旧副本差异结论 | QA-DOC-CONTENT-005 | 已通过 | T-DOC-CONTENT-005 |
@@ -578,6 +581,63 @@ QA 裁决为 pass、无范围违规。Craft 分支与 HEAD、262 文件/10,123,0
 禁止事项：不得修改其他文件；不得修改 Craft 仓库；不得重写历史、force push 或操作旧恢复副本。
 
 依赖：T-CRAFT-QA-SAFETY-001 pass。
+
+### T-CRAFT-QA-SAFETY-001-CLOSE
+
+任务ID：T-CRAFT-QA-SAFETY-001-CLOSE
+
+目标：只读确认 Craft 快照任务完成态、registry 与主仓远端收口一致，并确认可以启动旧副本隔离。
+
+背景：Repo-Beta 已推送收口提交 `fd41609`，报告任务与 registry 为 `completed`、主仓工作树干净；Craft 基线此前已 QA 通过。PM 派单会新增一处看板差异。
+
+验收标准：
+1. Craft 任务状态页与 registry 均为 `completed`，既有快照与风险证据保留，下一接手点指向旧副本隔离前健康复核。
+2. `fd41609` 仅含授权记录与 PM 看板；主仓 HEAD 与 `origin/master` 跟踪引用一致。
+3. Craft 仓库仍为 `master`/`c7cf805...`、无 remote、工作树干净。
+4. 除 PM 新派单的 `PROJECT_BOARD.md` 差异外，两仓无新增变化。
+5. 输出结构化 JSON：`task_id`、`verdict`、逐项 `criteria`、`blocking_issues`、`scope_check`、`summary`。
+
+允许修改的文件范围：无；只读。
+
+禁止事项：不得修改、提交、推送、清理或操作旧恢复副本。
+
+依赖：T-CRAFT-SAFETY-001-CLOSE。
+
+### T-CRAFT-QA-SAFETY-001-CLOSE 裁决
+
+QA 裁决为 pass、无范围违规。Craft 任务状态页与 registry 均为 `completed`；主仓收口提交 `fd41609` 范围合规且跟踪引用一致；Craft 仍为 `master`/`c7cf805`、无 remote、工作树干净。允许启动旧恢复副本隔离。
+
+### T-REPO-ARCHIVE-001
+
+任务ID：T-REPO-ARCHIVE-001
+
+目标：在两处活跃工作均已有恢复锚点后，将迁移恢复出的旧项目副本可逆地重命名隔离，消除后续 Agent 误入旧事实源的风险。
+
+背景：唯一主项目为 `C:/Users/Administrator/Documents/清单怪兽app`，已推送 GitHub；Craft 配套工作区为 `C:/Users/Administrator/Documents/craft-demo`，已有本地 Git 基线 `c7cf805...`。旧副本当前位于 `C:/Users/Administrator/Documents/Codex/Recovered_Old_PC/Documents/清单怪兽app`，HEAD 为 `c20254a36645493f220461ae016826685e3488fc`，有 4 个已跟踪文档修改和未跟踪 `.codex/`，此前已确认无主项目缺失的独有项目文件。用户已明确授权可逆隔离，不授权删除。
+
+验收标准：
+1. 隔离前只读复核：主仓 HEAD 与 `origin/master` 跟踪引用一致；Craft 为 `master`/`c7cf805...`、无 remote、工作树干净；除 PM 当前 `PROJECT_BOARD.md` 差异外两处活跃仓库无异常。
+2. 精确解析并验证源路径与目标父目录均位于 `C:/Users/Administrator/Documents/Codex/Recovered_Old_PC/Documents` 内；源路径必须存在，目标路径必须不存在，任何条件不满足立即停止。
+3. 隔离前记录旧副本 HEAD、`git status --short`、文件总数，并对 4 个已修改文档及 `.codex/**` 文件生成 SHA-256 清单，保存在主仓任务记录中或附加证据文件；若证据较长可创建 `.features/T-REPO-ARCHIVE-001/archive-manifest.txt`。
+4. 使用同一 PowerShell 环境的原生 `Move-Item -LiteralPath` 将整个旧项目目录移动到精确目标：`C:/Users/Administrator/Documents/Codex/Recovered_Old_PC/Documents/_ARCHIVE_DO_NOT_USE_清单怪兽app-c20254a-20260811`。不得复制后删除，不得跨 shell，不得移动父目录或其他恢复资料。
+5. 移动后确认旧路径不存在、目标路径存在；目标内 `.git` 完整，HEAD、工作树状态、文件数和 SHA-256 清单与移动前一致；不得提交、清理、还原或修改归档副本内容。
+6. 再次确认主仓和 Craft 路径、HEAD/工作树状态未被隔离操作改变；隔离可通过将目标目录原样重命名回旧路径恢复，并在记录中写明该恢复方法。
+7. 在主仓创建 `.features/T-REPO-ARCHIVE-001/status.md`，更新 `.features/_registry.md` 为 `ready_for_qa`，记录原路径、归档路径、前后证据、风险与下一接手点。
+8. 将任务记录、可选 manifest、registry 与 PM 当前 `PROJECT_BOARD.md` 按现状提交并正常推送主仓 `master`，提交信息为 `[T-REPO-ARCHIVE-001] 隔离旧恢复副本`；核对主仓 HEAD 与 `origin/master` 跟踪引用一致。
+
+允许修改的文件范围：
+- 目录级移动：`C:/Users/Administrator/Documents/Codex/Recovered_Old_PC/Documents/清单怪兽app` → `C:/Users/Administrator/Documents/Codex/Recovered_Old_PC/Documents/_ARCHIVE_DO_NOT_USE_清单怪兽app-c20254a-20260811`
+- 主仓 `.features/T-REPO-ARCHIVE-001/status.md`
+- 主仓 `.features/T-REPO-ARCHIVE-001/archive-manifest.txt`（仅在需要保存完整哈希清单时）
+- 主仓 `.features/_registry.md`
+- 主仓 Git 索引与提交对象
+- 允许暂存但禁止改写：主仓 `PROJECT_BOARD.md`
+
+任务记录：`.features/T-REPO-ARCHIVE-001/status.md`
+
+禁止事项：不得删除旧副本或其任何内容；不得移动 `Recovered_Old_PC` 父目录或其他恢复资料；不得修改旧副本、主项目产品内容或 Craft；不得重写历史、force push；路径校验失败时不得尝试模糊匹配或替代目标。
+
+依赖：T-REPO-SAFETY-001 与 T-CRAFT-SAFETY-001 完成态 QA 均通过。
 
 ### T-DOC-HANDOFF-001
 
