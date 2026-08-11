@@ -30,7 +30,7 @@ owner: Repo-Beta
 
 - Git 将忽略 `.playwright-cli/`、`shot*-out.json`、`snap*-out.json` 与 `webbridge-req-*.json` 临时产物。
 - 既有日志、`build/` 与 `dist/` 忽略规则继续有效。
-- 产品、设计、证据与治理内容已由四个逻辑提交保全到 `origin/master`。
+- 产品、设计、证据与治理内容已由五个实施提交保全到 `origin/master`。
 
 ## 验证证据
 
@@ -83,16 +83,24 @@ owner: Repo-Beta
 
 - 用户在根会话明确批准将已说明范围提交并推送到 `origin/master`；Repo-Beta 继承该可信授权后继续现有暂存现场。
 - 复用仓库最近提交者身份，仅写入本仓库本地 Git 配置；未修改全局身份配置。
-- 已创建四个逻辑提交：
+- 已创建五个实施提交：
   1. `2316978a078dde50260b108bca0ea0da261df14b`：产品修复、定向测试、Windows 构建脚本与 Craft 静态预览。
   2. `080ea9081b1d6982f6b0e38fed81db2caf3dfa23`：设计文档、PRD/PDF 与约 40.78 MB 视觉资产。
   3. `47e42b5fee89a8f4dd49d3db356c6c3c8a7fa2dd`：Bug 验收记录、Playwright 截图与工作区证据。
   4. `1292f51f28f705ee4cdc4e48180918b52888ab39`：协作配置、四层事实源、任务记录与忽略规则治理基线。
+  5. `db4f21e94a78de51a291facf16fd3acf906c0d4b`：记录主仓安全落盘结果并将任务正文与 registry 转为 `ready_for_qa`。
 - 每组提交前均执行当前工作树 `git diff --check`，结果通过；提交清单复核未包含 `.playwright-cli/**`、根目录诊断 JSON、日志、`build/**` 或 `dist/**`。
-- `git push origin master` 成功，远端更新范围为 `c20254a..1292f51`；本地 `HEAD`、本地跟踪引用 `origin/master` 与 `git ls-remote origin refs/heads/master` 均为 `1292f51f28f705ee4cdc4e48180918b52888ab39`。
+- 首次 `git push origin master` 成功，远端更新范围为 `c20254a..1292f51`；随后记录提交以 `1292f51..db4f21e` 第二批推送成功。该轮结束时，本地 `HEAD`、本地跟踪引用 `origin/master` 与 `git ls-remote origin refs/heads/master` 均为 `db4f21e94a78de51a291facf16fd3acf906c0d4b`。
 - 推送后工作树 `git status --short` 为空；被忽略的临时文件仍保留在磁盘。
 - 历史祖先检查确认 `590f0d1` 与 `424ddb4` 均包含在当前 `master` 中，未改写历史、未 force push、未切换分支。
 - 标准 `git fetch origin master` 受既有损坏的 `refs/codex/turn-diffs/checkpoints/**` 内部引用阻断；未删除或修复该范围外引用。改以 push 成功输出、本地跟踪引用和 `git ls-remote` 三方一致核对远端事实。
+
+### R2 QA 返工与记录校正
+
+- 独立 QA 判定仓库内容、禁入项、ignore、工作树和远端引用均正常；唯一失败项是本记录遗漏第五个实施/记录提交 `db4f21e94a78de51a291facf16fd3acf906c0d4b`，并仍把 `1292f51` 写作最终远端锚点。任务据此进入 `rework`。
+- 本轮已统一校正为五个实施提交，并保留首次推送、第二批记录推送、Flutter 5/5、凭据登录、禁入项与 checkpoint 引用风险证据；自测完成后恢复为 `ready_for_qa`。
+- 本次 R2 校正提交的父提交为 `db4f21e94a78de51a291facf16fd3acf906c0d4b`，提交信息为 `[T-REPO-SAFETY-001] 校正最终提交记录`，通过后续独立推送批次进入 `origin/master`。
+- 为避免自指遗漏，本记录不在提交自身内容中预写 R2 提交自身哈希；R2 推送完成后的最终锚点必须由 `git log -1`、本地 `origin/master` 跟踪引用与 `git ls-remote origin refs/heads/master` 三方复核。
 
 ## 风险 / 未决事项
 
@@ -103,7 +111,7 @@ owner: Repo-Beta
 
 ## 下一接手点
 
-由新鲜 QA Inspector 只读复核四个提交、禁入项、测试证据、远端 master 一致性与干净工作树；同时把损坏的 Codex 内部检查点引用登记为独立治理风险，不在本任务内修复。QA 前禁止修改或改写本次提交历史，也不得操作 Craft 工作区或恢复副本。
+由新鲜 QA Inspector 只读复核五个已知实施提交、本次 R2 校正提交、禁入项、测试证据、远端 master 一致性与干净工作树；同时确认损坏的 Codex 内部检查点引用仍仅作为独立治理风险保留。QA 前禁止修改或改写本次提交历史，也不得操作 Craft 工作区或恢复副本。
 
 ## 维护信息
 
@@ -117,4 +125,5 @@ owner: Repo-Beta
 - 2026-08-11：R1 定位到沙箱对外置 SDK 缓存锁与 stamp 的写权限限制；在不安装、不升级、不修改系统配置的前提下，沙箱外使用同一绝对路径 SDK 完成 doctor 与定向测试，5 项测试全部通过，任务恢复为 `in_progress`。
 - 2026-08-11：产品/测试与项目工具组完成暂存及排除项核对；默认分支提交权限申请被自动审查拒绝，未创建提交或推送，任务转为 `blocked` 等待人类用户明确批准。
 - 2026-08-11：PM 转达用户明确授权后再次申请提交权限；自动审查仍因授权属于代理转述而拒绝。按要求立即停止，保留 10 个文件的原暂存状态，未提交或推送。
-- 2026-08-11：Repo-Beta 继承根会话中的用户直接授权，完成四个逻辑提交并正常推送至 `origin/master`；本地、跟踪引用与远端 master 哈希一致，工作树为空，任务转为 `ready_for_qa`。
+- 2026-08-11：Repo-Beta 继承根会话中的用户直接授权，完成五个实施提交并分两批正常推送至 `origin/master`；该轮最终远端哈希为 `db4f21e94a78de51a291facf16fd3acf906c0d4b`，工作树为空，任务转为 `ready_for_qa`。
+- 2026-08-11：独立 QA 因提交数量与最终哈希记录不一致判定失败；任务进入 `rework`，完成五提交事实、最终远端锚点及 R2 非自指复核规则校正后恢复为 `ready_for_qa`。

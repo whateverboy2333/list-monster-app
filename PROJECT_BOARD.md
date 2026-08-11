@@ -15,7 +15,8 @@ Craft 可编辑设计工作区；先把两处活跃工作落入可恢复版本�
 | frontend_dev | Lovelace / FE-PC-Design | 待命 | 2 |
 | documentation | DOC-Alpha | 待命 | 6 |
 | repository_ops | Repo-Alpha | 已轮换：权限上下文无法接收用户授权 | 0 |
-| repository_ops | Repo-Beta | 在岗（继任主仓提交与推送） | 0 |
+| repository_ops | Repo-Beta | 在岗（T-REPO-SAFETY-001-R2） | 1 |
+| qa_inspector | QA-REPO-SAFETY-001 | 已裁撤 | 0 |
 | qa_inspector | QA-DOC-CONTENT-005 | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-CONTENT-005-CLOSE | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-001 | 已裁撤 | 1 |
@@ -86,8 +87,10 @@ Craft 可编辑设计工作区；先把两处活跃工作落入可恢复版本�
 | 任务 ID | 任务 | 负责人 | 状态 | 依赖 |
 |---|---|---|---|---|
 | T-REPO-IDENTITY-001 | 裁决主项目、Craft 工作区与恢复副本身份 | PM | 已完成 | 无 |
-| T-REPO-SAFETY-001 | 将主项目未提交工作按价值分类并提交落盘 | Repo-Beta | 已转交继任线程执行明确授权 | T-REPO-IDENTITY-001 |
-| T-REPO-SAFETY-001-R1 | 诊断 Flutter 测试启动超时并在门禁通过后继续主仓提交推送 | Repo-Beta | Repo-Alpha 权限上下文不可用，已携现场转交 | T-REPO-SAFETY-001 |
+| T-REPO-SAFETY-001 | 将主项目未提交工作按价值分类并提交落盘 | Repo-Beta | QA 未通过：任务记录遗漏第 5 个提交，R2 返工中 | T-REPO-IDENTITY-001 |
+| T-REPO-SAFETY-001-R1 | 诊断 Flutter 测试启动超时并在门禁通过后继续主仓提交推送 | Repo-Beta | 已完成：5 个提交推送，HEAD/远端一致 | T-REPO-SAFETY-001 |
+| T-REPO-QA-SAFETY-001 | 独立验收主仓提交、排除项、测试证据与远端一致性 | QA-REPO-SAFETY-001 | 未通过：状态页仍记 4 个提交/1292f51 | T-REPO-SAFETY-001-R1 |
+| T-REPO-SAFETY-001-R2 | 校正任务记录中的第 5 个提交与最终远端哈希 | Repo-Beta | 已派单 | T-REPO-QA-SAFETY-001 |
 | T-CRAFT-SAFETY-001 | 为 Craft 工作区建立本地版本快照 | 待派单 | 用户已确认，等待主仓安全任务通过 | T-REPO-SAFETY-001-R1 |
 | T-REPO-ARCHIVE-001 | 迁移唯一有效事实后隔离旧恢复副本 | 待派单 | 用户已确认，等待主仓与 Craft 快照通过 | T-REPO-SAFETY-001-R1、T-CRAFT-SAFETY-001 |
 | T-DOC-CONTENT-005 | 整理当前项目内容地图与旧副本差异结论 | DOC-Alpha | 已完成 | T-REPO-IDENTITY-001 |
@@ -325,6 +328,67 @@ Flutter 启动超时已定位为项目外 SDK 的 Git 所有权校验与缓存�
 2026-08-11 用户已明确回复“我批准将上述内容提交并推送到 origin/master”，批准范围包括：直接提交并推送现有 GitHub `origin/master`、首批静态预览构建产物，以及后续设计素材、PRD、QA 证据和交接文档；仍禁止改写历史、force push 或删除本地文件。
 
 Repo-Alpha 交接：Flutter 定向测试 5/5 通过；HEAD 仍为 `424ddb4`；10 个文件、1,333,705 字节暂存且无禁入项。两次提交均因其线程无法获得根会话可信用户授权而被权限审查拒绝，未提交、未推送、未取消暂存。由继承用户原始授权上下文的 Repo-Beta 从现有暂存现场继续。
+
+Repo-Beta 实施结果：共创建并推送 5 个逻辑提交，最终 HEAD、`origin/master` 跟踪引用与 GitHub 远端均为 `db4f21e94a78de51a291facf16fd3acf906c0d4b`；Flutter 定向测试 5/5 通过，实施结束时工作树为空且禁入项为零。普通 `git fetch` 仍被既有损坏的 Codex checkpoint 引用阻断，已作为独立风险保留，不影响本次通过跟踪引用与 `ls-remote` 完成的远端一致性核验。
+
+### T-REPO-QA-SAFETY-001
+
+任务ID：T-REPO-QA-SAFETY-001
+
+目标：以只读方式独立验收主仓安全提交是否完整、合规、可恢复，并裁决能否进入收口。
+
+背景：Repo-Beta 报告在 `master` 上创建并推送 5 个逻辑提交，最终本地和 GitHub 远端均为 `db4f21e94a78de51a291facf16fd3acf906c0d4b`；Flutter 定向测试 5/5 通过。普通 fetch 受既有损坏 Codex checkpoint 引用影响，实施 Agent 已改用跟踪引用和 `ls-remote` 交叉核验。PM 派发 QA 时会新增一处未提交的 `PROJECT_BOARD.md` 看板更新，该差异属于 PM 派单，不得归因于实施 Agent。
+
+验收标准：
+1. 只读确认当前分支为 `master`，历史包含 `590f0d1`、`424ddb4` 及本任务 5 个新提交；提交信息符合 `[T-REPO-SAFETY-001]` 格式且未出现 amend/rebase/force 痕迹。
+2. 复核 5 个提交的文件清单与分组，确认产品源码/测试、项目工具、静态预览、设计文档与素材、PRD/PDF、QA 证据、PM 文档、协作体系和任务记录均已纳入。
+3. 确认提交历史不含 `.playwright-cli/**`、根目录诊断 JSON、服务日志、`build/**`、`dist/**`；对应临时文件若存在，应由 ignore 排除而非被删除。
+4. 复核 `.gitignore` 新增规则有效，`git diff --check` 通过；验证任务记录中 Flutter 命令、退出码 0 与 5/5 结果证据完整可信。
+5. 独立核对本地 HEAD、`refs/remotes/origin/master` 与 `git ls-remote origin refs/heads/master` 均为 `db4f21e94a78de51a291facf16fd3acf906c0d4b`；不得以受损 checkpoint 导致的普通 fetch 失败误判本次 push 失败，但须确认风险记录准确。
+6. 除 PM 派单产生的 `PROJECT_BOARD.md` 未提交差异外，不应存在其他实施遗留的 tracked/untracked 工作树变化；不得清理或修改任何文件。
+7. `.features/T-REPO-SAFETY-001/status.md` 与 `.features/_registry.md` 均为 `ready_for_qa`，提交哈希、排除项、风险和下一接手点完整一致。
+8. 输出结构化 JSON：`task_id`、`verdict`（pass/fail）、逐项 `criteria`、`blocking_issues`、`scope_check`、`remote_recovery_check`、`summary`。
+
+允许修改的文件范围：无；全程只读。
+
+任务记录：QA 不创建或修改任务记录；裁决由 PM 写入 `PROJECT_BOARD.md`。
+
+禁止事项：不得编辑、暂存、提交、推送、清理、修复引用或操作 `craft-demo`/恢复副本。
+
+依赖：T-REPO-SAFETY-001-R1。
+
+### T-REPO-QA-SAFETY-001 裁决
+
+QA 裁决为 fail，无范围违规。主仓提交内容、禁入项、ignore、工作树与本地/跟踪引用均通过核查；阻断问题仅在任务记录：`.features/T-REPO-SAFETY-001/status.md` 仍称 4 个逻辑提交、最终哈希 `1292f51`，遗漏第 5 个记录提交 `db4f21e`，使远端恢复锚点和下一接手说明与实际历史不一致。退回原实现线程 Repo-Beta 返工。
+
+### T-REPO-SAFETY-001-R2
+
+任务ID：T-REPO-SAFETY-001-R2
+
+目标：把主仓安全任务记录校正为实际 5 个提交与最终远端哈希，消除交接事实不一致。
+
+背景：QA 已确认仓库内容、禁入项、ignore、工作树和跟踪引用本身正常；唯一阻断是任务状态页仍停留在第 4 个提交 `1292f51`。实际第 5 个记录提交及本地/远端最终哈希为 `db4f21e94a78de51a291facf16fd3acf906c0d4b`。
+
+验收标准：
+1. 继续维护同一 `.features/T-REPO-SAFETY-001/status.md`，正文状态进入 `rework` 后在自测完成时恢复 `ready_for_qa`；不得新建 R2 平行记录。
+2. 将所有“4 个提交”“最终为 `1292f51`”及下一步只复核 4 个提交的过时表述，统一校正为实际 5 个提交与最终哈希 `db4f21e94a78de51a291facf16fd3acf906c0d4b`。
+3. 保留并逐项列明 5 个提交哈希及用途；不得抹除 Flutter 5/5、禁入项、首次推送、凭据登录和 checkpoint 引用风险等既有证据。
+4. `.features/_registry.md` 与正文状态一致为 `ready_for_qa`，更新时间同步。
+5. 只修改两份任务记录文件；`PROJECT_BOARD.md` 仅允许按 PM 当前内容暂存，不得改写。
+6. 创建符合 `[T-REPO-SAFETY-001] 校正最终提交记录` 格式的提交并正常推送 `master`；推送后本地 HEAD、跟踪引用与远端一致，并把新记录提交哈希作为第 6 个提交追加回状态页时，不得再次形成自指遗漏：状态页应明确区分“5 个实施提交”和“本次 R2 记录校正提交”，远端最终锚点以推送后的实际 HEAD 为准。
+7. 若为记录本次 R2 最终提交哈希需要产生后续记录提交，必须采用非自指表述：记录“R2 记录提交的父提交/推送批次”及可由 Git 历史定位的提交信息，不强行把当前尚未生成的自身哈希写入自身内容；下一接手点须说明以 `git log -1` 与远端引用复核最终锚点。
+
+允许修改的文件范围：
+- `.features/T-REPO-SAFETY-001/status.md`
+- `.features/_registry.md`
+- Git 索引与提交对象
+- 允许暂存但禁止改写：`PROJECT_BOARD.md`
+
+任务记录：`.features/T-REPO-SAFETY-001/status.md`
+
+禁止事项：不得修改其他文件；不得重写历史、amend、rebase、reset、clean、force push 或切换分支；不得操作 `craft-demo` 或恢复副本。
+
+依赖：T-REPO-QA-SAFETY-001 fail 裁决。
 
 ### T-DOC-HANDOFF-001
 
