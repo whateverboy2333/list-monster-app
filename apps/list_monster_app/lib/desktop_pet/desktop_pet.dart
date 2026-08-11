@@ -298,7 +298,7 @@ class _DesktopPetSnapshotBody extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               const SizedBox(height: 8),
-              Text('Today $model.progressLabel'),
+              Text('Today ${model.progressLabel}'),
               if (model.showReminderBubble) ...[
                 const SizedBox(height: 16),
                 DecoratedBox(

@@ -49,6 +49,23 @@ void main() {
     );
   });
 
+  testWidgets(
+    'renders the completed task progress without leaking model text',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DesktopPetSnapshotView(
+            snapshotSource: _FakeSnapshotSource(_snapshot()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Today 1/3'), findsOneWidget);
+      expect(find.textContaining('DesktopPetViewModel'), findsNothing);
+    },
+  );
+
   testWidgets('do-not-disturb snapshot suppresses reminder bubble', (
     tester,
   ) async {
