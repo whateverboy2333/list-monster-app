@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T-DIGIPET-007B",
+  "date": "2026-08-05",
+  "screen": "stage-02-growth",
+  "identity": "联页契灵",
+  "stage": "共同成长体",
+  "ability": "双向续页",
+  "status": "ready_for_qa",
+  "source": {
+    "file": "../pixel-art/checklist-creature-pixel-evolution-v3-r3.png",
+    "width": 1693,
+    "height": 929,
+    "sha256": "d4b38d877a3674d38339578cd5777a44bc70ed675c17de23dd22b91b33f95361",
+    "cropBox": [405, 210, 930, 740]
+  },
+  "derivedRole": {
+    "file": "role-crops/role-stage-02-growth.png",
+    "width": 515,
+    "height": 506,
+    "sha256": "dd1c7f888278cb3ffd48a98870b72be595196a6b96af051c65a3dce7c29f2b79",
+    "processing": "confirmed background and neutral hard-white transparency; left/right branch-arrow spatial cleanup; isolated background noise removal; no redraw or geometric transform"
+  },
+  "generator": {
+    "mode": "authored SVG plus deterministic browser render",
+    "sourceFile": "stage-02-growth.source.svg",
+    "renderer": "Microsoft Edge 151 headless",
+    "generativeImageUsed": false
+  },
+  "output": {
+    "file": "stage-02-growth.png",
+    "width": 443,
+    "height": 980,
+    "bytes": 93393,
+    "sha256": "7ae015bd4d2bfabd25ba259736ed7e1b991d2ff19dd4023d7b0eb56db7b3634d"
+  },
+  "responsiveAudit": {
+    "width375": "pass_equal_columns",
+    "largeText200": "requires_equal_vertical_stack",
+    "risk": "medium"
+  },
+  "review": {
+    "routesEqual": true,
+    "forcedBranch": false,
+    "petInteractionAddsXp": false,
+    "bodyContrastMinimum": "4.5:1",
+    "qaEvidence": false
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T-DIGIPET-007A-R2",
+  "date": "2026-08-05",
+  "screen": "stage-00-egg-r2",
+  "status": "implementation_baseline",
+  "supersedes": "stage-00-egg-r1.png",
+  "generator": {
+    "mode": "authored SVG plus deterministic browser render",
+    "sourceFile": "stage-00-egg-r2.source.svg",
+    "sourceSha256": "9a12af25935600e5133dda7a511e1bee79372cfdf5b5cfb8990f148e94723599",
+    "renderer": "Microsoft Edge 151 headless",
+    "deviceScaleFactor": 1,
+    "generativeImageUsed": false
+  },
+  "referenceAssets": [
+    {
+      "file": "../pixel-art/eggs/egg-glow-states-pixel-v3.png",
+      "width": 1728,
+      "height": 972,
+      "sha256": "5b89d986a6a0c29ab3949a1c06cd9e49eba08312d104e54aa4d57c0e74b24a4f",
+      "sourcePixelCrop": [624, 120, 1104, 780]
+    },
+    {
+      "file": "stage-00-egg-r2-asset.png",
+      "role": "transparent egg body without source ground pixels",
+      "width": 480,
+      "height": 660,
+      "alphaBounds": [0, 0, 479, 659],
+      "alphaAspectRatio": 0.727273,
+      "opaquePixelCount": 252864,
+      "rgbaMismatchAgainstParentCrop": 0,
+      "rgbMismatchAgainstOriginalAsset": 0,
+      "sha256": "081ae8096d3adb50832adc4afcb373491de2443d084579ea557fa3d1cedc85ad"
+    },
+    {
+      "file": "../pixel-art/eggs/egg-turnaround-pixel-v7.png",
+      "role": "read-only geometry verification",
+      "sha256": "3e0c1002bfbcd744c47eaaebf387f382eb274ac57b17d117637e31a0c0633021"
+    }
+  ],
+  "displayTransform": {
+    "box": [157.5, 180, 128, 176],
+    "preserveAspectRatio": "xMidYMid meet",
+    "displayAspectRatio": 0.727273,
+    "sourceEffectiveAspectRatio": 0.727273,
+    "aspectRatioDifferencePercent": 0.0,
+    "horizontalScale": 0.266667,
+    "verticalScale": 0.266667,
+    "uniformScale": true,
+    "nonUniformScale": false
+  },
+  "composition": {
+    "habitatBackground": "#171C26",
+    "observationWindowVisible": false,
+    "horizontalHaloVisible": false,
+    "verticalHaloVisible": false,
+    "extraGroundShadowVisible": false,
+    "decorativeStageShapesVisible": false,
+    "replacementDecorationAdded": false
+  },
+  "output": {
+    "file": "stage-00-egg-r2.png",
+    "width": 443,
+    "height": 980,
+    "format": "png",
+    "bytes": 49020,
+    "sha256": "691c23c8d974530986f3ee2b11b74f23f9637c8ea8424ee440a6748e8caad2c1"
+  },
+  "contentPreserved": {
+    "identity": "初诺契茧",
+    "promiseProgress": "2/3",
+    "nextLightCondition": true,
+    "trajectory": ["未唤醒", "回响积累", "临近孵化"],
+    "evidenceRows": 2,
+    "noPressureNote": true,
+    "pettingVisible": false
+  },
+  "review": {
+    "bodyContrastMinimum": "4.77:1",
+    "textComposedAfterImageGeneration": true,
+    "textOverlap": false,
+    "textOverflow": false,
+    "originalAssetsModified": false
+  }
+}

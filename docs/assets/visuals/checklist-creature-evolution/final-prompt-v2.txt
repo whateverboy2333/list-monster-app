@@ -1,0 +1,37 @@
+FINAL V2 PROMPT SET
+
+PASS 1 — STRUCTURAL REDESIGN
+
+Use case: precise-object-edit
+Asset type: V2 original 2D game creature evolution character concept sheet
+Input images: Image 1 is the edit target and composition/style reference.
+Primary request: Keep the existing horizontal three-form evolution sheet, scholar branch, Y-shaped evolution path, pale background, rendering quality, and shared color language. Redesign only the juvenile on the left and the boxer final evolution on the upper-right to address two exact problems: remove all fox/cat/dog recognition from the juvenile, and completely wrap the boxer's head in parchment mummy bandages so only two glowing green eyes remain.
+
+Juvenile redesign — highest priority: create an abstract living parchment-contract creature, immediately readable as a magical paper monster rather than a fox or ordinary mammal. Its body is a compact three-dimensional bundle of curled contract sheets: a rounded folded-scroll torso with layered volume, two asymmetrical broad page-flap appendages instead of animal ears, a short curled receipt-like paper loop instead of a furry tail, tiny flexible folded-paper nubs instead of realistic paws, and no conventional animal face. Place two large friendly green/teal luminous eyes directly between overlapping parchment folds; use a tiny curved ink mark for warmth but no protruding nose, no muzzle, no cheeks, no fur, no facial mask pattern. Use rolled edges, visible creases, indigo stitches, a coral wax-seal clasp, and three bold checklist boxes as its anatomy. It must still feel alive, cute, mobile, and pet-like through its low bouncy stance, tilted page-flaps, eye expression, and curled-sheet silhouette. It must not be a flat rectangle with stick limbs.
+
+Boxer redesign — highest priority: preserve the strong boxing stance, oversized contract-paper fists, athletic wrapped body, checklist marks, coral waist seal, indigo seams, and lime completion energy. Replace the entire head with a compact rounded mummy hood made from many tightly overlapping strips of parchment contract paper. The wrapping must cover 100% of the head surface. Show no mouth, no nose, no muzzle, no fur, no exposed skin, no cheeks, no animal ears, and no hair. The only openings are two narrow almond-shaped slits containing bright glowing green eyes. Reinforce the eye area with darker indigo shadow between wraps so the two green eyes are unmistakable. The head silhouette should be round and fully bandaged, not fox-shaped. Keep it mysterious and heroic, not scary, not skeletal, no gore.
+
+Scholar invariant: keep the lower-right scholar clearly constructed from interlocked books, open pages, book-cover shoulders, indigo bindings, central checklist tome, coral chest seal, page crown, and layered book-robe silhouette. It must remain a grand book-built scholar, not become a normal robed animal. Minor consistency adjustments are allowed only if needed to show lineage with the more abstract juvenile.
+
+Composition invariant: exactly three complete characters in the same layout — abstract parchment juvenile on left, fully wrapped boxer upper-right, book-built scholar lower-right — linked by one clear lime-green Y-shaped branching evolution path. All bodies and appendages fully inside the landscape frame with generous margins. No extra characters or sketches.
+Shared lineage invariant: all three use warm ivory parchment, glowing green check motifs, coral wax seals, indigo stitching/binding, and antique-gold accents. Preserve polished 2D collectible-game concept art, clean confident linework, soft cel shading, restrained parchment texture, and friendly bright presentation.
+Text: no words, no labels, no letters, no numbers; only checkboxes and checkmark pictograms.
+Constraints: change only the specified character designs while retaining the core sheet; no watermark, no logo, no trademark, no border, no scenery, no UI, no existing-IP symbols, no cropped characters.
+Avoid especially: pointed fox ears on the juvenile, fox facial markings, animal muzzle, black animal nose, furry tail, realistic paws, recognizable cat/dog/fox anatomy; any exposed boxer face, nose, mouth, muzzle, fur, skin, ears, or hair; horror, corpse imagery, skulls, blood, pseudo-text, extra mascots, duplicate forms, 3D render.
+
+PASS 2 — TARGETED JUVENILE FACE CORRECTION
+
+Use case: precise-object-edit
+Asset type: final V2 original 2D game creature evolution concept sheet
+Input images: Image 1 is the edit target.
+Primary request: Make exactly one targeted design correction to Image 1: remove the remaining ordinary animal-face cues from the juvenile parchment creature on the left. Keep the fully wrapped boxer, the book-built scholar, all poses, the Y-shaped evolution path, the exact three-character landscape composition, palette, lighting, background, and rendering style unchanged.
+
+Juvenile face correction: erase the small black nose, mouth, muzzle line, snout shape, cheek shape, and any mammal-like facial mask. Replace the central face with a smooth overlapping parchment fold / shallow shadow pocket that is visibly made only from layered contract paper. Mount the same two large friendly teal-green luminous eyes directly on the paper folds, spaced expressively but without eyelids shaped like a mammal mask. Under the eyes, place only one tiny simple coral wax-seal dot or short curved indigo ink stroke as an abstract emotive symbol — it must not look like a nose or mouth. Keep the broad asymmetrical stitched page-flaps as paper appendages, not ears; keep the coiled sheet loops, folded-paper nubs, checklist panel, coral chest seal, indigo stitches, three-dimensional bundled-scroll body, cute low bouncy stance, and clear silhouette.
+
+Critical juvenile test: first glance must read “living bundle of parchment contracts” rather than fox, cat, dog, rabbit, raccoon, or any normal animal. No pointed ears, no animal nose, no muzzle, no mouth, no whiskers, no face mask, no fur, no furry tail, no realistic paws. Do not flatten it into a rectangle with stick limbs.
+
+Boxer invariant: preserve exactly the upper-right boxer with its entire round head tightly covered by overlapping parchment bandages and only two glowing green eyes visible in a dark indigo slit; no exposed face, mouth, nose, fur, skin, or ears. Preserve boxing stance and paper fists.
+Scholar invariant: preserve the lower-right grand scholar built from books, pages, bindings, page crown, central tome, layered book robe, and page tail.
+Composition invariant: exactly three complete characters, no cropping, no additions, same clear lime-green Y-shaped branching relationship.
+Text: no words, no labels, no letters, no numbers; only checkbox and checkmark pictograms.
+Constraints: change only the juvenile facial construction; no watermark, logo, trademark, border, scenery, UI, existing-IP symbols, extra character, or horror.

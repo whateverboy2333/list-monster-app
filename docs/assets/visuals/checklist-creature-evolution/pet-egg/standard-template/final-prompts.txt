@@ -1,0 +1,52 @@
+PRODUCTION MODE
+Built-in image_gen tool.
+
+IMAGE 1 — UNIVERSAL DINOSAUR EGG STANDARD MULTI-VIEW
+
+Use case: stylized-concept
+Asset type: universal collectible-game dinosaur pet egg standard-template multi-view concept sheet
+Primary request: Create the one and only universal pet egg geometry and surface-pattern template that every species in a game will reuse unchanged. Show the same single egg design from exactly three views: front view on the left, side view in the center, and front three-quarter view on the right. Only species colors may ever change; silhouette, proportions, hard-shell material, spot shapes, spot count, spot sizes, spot distribution, and glow-point positions are fixed forever.
+Standard silhouette: unmistakably a classic rounded dinosaur egg—full, plump, closed, softly asymmetrical only in the natural egg proportion, broad rounded lower body and gently narrower rounded top. Continuous smooth curvature from top to bottom. Near rotational symmetry. No flat base, pedestal, opening, neck, crown, tip fold, seam ridge, protrusion, ring, coil, or structural ornament. Each view must prove the same smooth ovoid solid rotating in space.
+Standard hard-shell material: one continuous semi-matte natural eggshell surface with very fine pores, microscopic mineral grain, subtle tonal mottling, and one soft broad studio highlight. The surface must read as hard eggshell, never parchment, paper, fabric, leather, metal, stone, ceramic, glass, a book, mummy wrap, or UI object.
+Fixed universal pattern geometry: use exactly five large rounded organic primary patches with soft natural irregular boundaries, exactly four medium rounded organic secondary patches, and exactly sixteen tiny circular speckles. The arrangement is a fixed skin-map wrapped continuously around the egg surface, with correct foreshortening and occlusion in each view. Large patches should be broad natural dinosaur-egg blotches, not symbols. Medium patches occupy gaps without forming a face. Tiny speckles are sparsely distributed in the same fixed positions. No stripe, line, checker, glyph, icon, letter, number, checkbox, stitch, seal, seam, page, bandage, book, or geometric emblem.
+Current color-slot mapping for this universal template: base shell warm ivory #E8D8B7; all five large primary patches deep muted indigo #283C58; all four medium secondary patches warm coral #CF6B55; all sixteen tiny speckles use restrained lime-green #B8D94A with a nearly dormant soft inner glow. Keep warm ivory visually dominant, indigo second, coral third, and lime only as tiny accents. It must look like a plausible natural fantasy dinosaur egg at first glance, not a colorful UI prop.
+View consistency: the egg's exact height-to-width ratio, top roundness, bottom roundness, center of mass, shell material, five primary patch shapes, four secondary patch shapes, sixteen speckle positions, and color allocation must be identical across all three views, only rotated. Maintain consistent lighting direction so highlights shift plausibly with view while geometry stays fixed.
+Style/medium: polished original 2D collectible-game concept art, clean restrained edge work, soft cel-assisted rendering, believable hard eggshell texture, friendly natural presentation, no heavy outlines around spots.
+Scene/backdrop: clean pale warm off-white studio-concept background with one subtle soft grounding shadow beneath each view; no nest, grass, rock, pedestal, scenery, UI, frame, divider, or props.
+Composition/framing: landscape sheet, three evenly spaced complete eggs, same scale, fully visible with generous margins, no overlap and no crop.
+Text: no written words, labels, letters, numbers, title, captions, callouts, or measurement marks.
+Constraints: exactly three views of one universal egg template; no extra egg design; no pet, animal, embryo, eye, mouth, ear, limb, face, hatchling, crack, opening, fragment, watermark, logo, trademark, or existing-IP symbol.
+Avoid especially: parchment cocoon, rolled paper, folded page, pointed crown, spring base, stitching, wax seal, contract markings, checklist symbols, boxing wrap, book motifs, species-specific geometry, decorative relief, raised icon, engraved emblem.
+
+IMAGE 2 — BASE THREE-STATE SEQUENCE
+
+Use case: identity-preserve
+Asset type: universal dinosaur pet egg three-state hatching sequence using the current species color slots
+Input images: Image 1 is the locked universal standard-template identity reference. Use the rightmost front three-quarter egg as the exact master. Preserve its exact smooth plump closed dinosaur-egg silhouette, height-to-width ratio, rounded top and bottom, camera angle, scale, semi-matte hard-eggshell material, pore texture, five indigo primary patch shapes and positions, four coral secondary patch shapes and positions, sixteen lime speckle positions, lighting direction, and grounding shadow. Do not redesign or rearrange anything.
+Primary request: Show exactly three copies of that same master egg in the same front three-quarter angle and same scale, arranged left to right as dormant, echo accumulating, and near hatching. The shell geometry, view, spot geometry, spot count, spot size, spot positions, material, and background remain pixel-consistent in intent. Change only the brightness and color intensity of the same sixteen fixed lime hatch-glow speckles and their very soft local halos. No new speckle may appear and none may move.
+State 1, left — dormant: warm ivory base, deep muted indigo large patches, warm coral medium patches unchanged. The sixteen lime speckles are visible as tiny matte yellow-green pinpoints at about 15% glow intensity, with no halo beyond each point.
+State 2, center — echo accumulating: identical egg. The same sixteen lime speckles rise to about 55% brightness and slightly richer lime saturation. Each has a restrained soft halo no wider than twice the speckle diameter. Indigo and coral patches, shell brightness, geometry, and all positions remain unchanged.
+State 3, right — near hatching: identical intact egg. The same sixteen lime speckles reach about 100% brightness and rich lime color, with a gentle unified soft aura hugging the shell surface; the aura must remain subtle and cannot obscure the natural eggshell or spots. Indigo and coral color slots may gain only a very slight saturation lift, with no geometry change. The egg remains fully closed and unbroken.
+Universal-template invariant: all three are the exact same universal egg and fixed pattern map; future species would change only four color values—base, primary_spot, secondary_spot, hatch_glow—never geometry or material. The sequence must demonstrate that hatching state also never alters geometry or pattern layout.
+Material: natural semi-matte hard dinosaur eggshell with fine pores, microscopic mineral grain, and soft broad highlight. Never parchment, paper, fabric, leather, metal, stone, ceramic, glass, book, mummy wrap, or UI object.
+Pattern: only rounded organic blotches and tiny round speckles conforming to the curved shell. No line, stripe, symbol, checkbox, stitch, wax seal, seam, page, bandage, book motif, glyph, icon, letter, number, or emblem.
+Style/medium: polished original 2D collectible-game concept art, restrained natural fantasy, clean rendering, believable hard shell.
+Scene/backdrop: clean pale warm off-white background with one subtle grounding shadow beneath each egg; no nest, grass, stone, pedestal, scenery, UI, frame, divider, or prop.
+Composition/framing: wide landscape, three evenly spaced complete eggs, same scale and baseline, generous margins, no overlap, no crop.
+Text: no written words, labels, letters, numbers, captions, or title.
+Constraints: exactly three states of one universal egg template; no extra egg design, no pet, hatchling, embryo, eye, mouth, ear, limb, face, crack, opening, shell fragment, debris, smoke, beam, explosion, watermark, logo, trademark, or existing-IP symbol.
+
+IMAGE 2 — FINAL VIEW-CONSISTENCY REVISION
+
+Use case: precise-object-edit
+Asset type: corrected universal dinosaur pet egg three-state hatching sequence
+Input images: Image 1 is the edit target.
+Primary request: Correct only the view and pattern consistency across the three eggs. Make the center and right eggs exact visual duplicates of the left egg's front three-quarter camera angle, silhouette, proportions, highlight placement, shadow shape, five indigo patch silhouettes and positions, four coral patch silhouettes and positions, and sixteen speckle positions. All three must look like the same image-space egg copied three times at equal scale and baseline, not three rotations or alternate views.
+Preserve the state progression only through the same sixteen fixed speckles: left at 15% dormant brightness with no halo; center at 55% lime brightness with tiny local halos; right at 100% lime brightness with a gentle shell-hugging aura. Do not alter, move, add, remove, resize, or recolor any indigo or coral patch between states. Do not alter shell geometry, texture, broad highlight, or camera angle between states.
+Universal template: smooth plump fully closed classic dinosaur egg, continuous rounded top and bottom, near-rotationally-symmetric hard semi-matte eggshell with fine pores. No seam, opening, protrusion, fold, pedestal, crown, symbol, or structural ornament.
+Pattern: rounded organic blotches and tiny round speckles only. No line, stripe, icon, checkbox, stitch, seal, page, bandage, book, emblem, glyph, letter, or number.
+Scene/backdrop: preserve the clean pale warm off-white background and one subtle shadow under each egg.
+Composition/framing: exactly three identical-view eggs, evenly spaced, fully visible, no crop.
+Text: no labels, words, letters, numbers, captions, or title.
+Constraints: change only center/right view and pattern alignment to match the left master, while preserving the three glow intensities; no extra egg, pet, hatchling, crack, fragment, smoke, watermark, logo, trademark, or existing-IP symbol.
+

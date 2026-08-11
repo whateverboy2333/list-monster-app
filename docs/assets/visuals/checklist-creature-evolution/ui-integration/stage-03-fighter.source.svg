@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="443" height="980" viewBox="0 0 443 980" role="img" aria-labelledby="title desc">
+  <title id="title">履契拳师直接履约分支怪兽页</title><desc id="desc">履契拳师页面聚焦当前兑现任务、按时间排列的真实行动完成证据、持续成长信息与不增加经验的互动入口。</desc>
+  <defs><filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#171C26" flood-opacity="0.20"/></filter><style>.zh{font-family:"Microsoft YaHei","Source Han Sans SC","Noto Sans CJK SC",sans-serif;letter-spacing:0}.ink{fill:#171C26}.stone{fill:#6B665D}.cream{fill:#FFF9ED}.lime{fill:#C9F266}.cyan{fill:#54D6C8}.coral{fill:#FF715B}.line{stroke:#D6C8AC;stroke-width:1}.round{stroke-linecap:round;stroke-linejoin:round}</style></defs>
+  <rect width="443" height="980" fill="#F4EAD4"/><text x="20" y="17" class="zh ink" font-size="11" font-weight="700">9:41</text>
+  <text x="20" y="40" class="zh stone" font-size="13" font-weight="600">怪兽 / 契响卷灵</text><rect x="315" y="31" width="7" height="7" rx="1" class="coral"/><text x="330" y="40" class="zh stone" font-size="13" font-weight="600">直接履约分支</text>
+  <text x="20" y="75" class="zh ink" font-size="28" font-weight="800">履契拳师</text><text x="20" y="101" class="zh stone" font-size="14">完全体 · 把承诺变成连续完成的节奏</text>
+  <g filter="url(#shadow)"><rect x="20" y="116" width="403" height="320" rx="22" fill="#171C26"/><rect x="20.5" y="116.5" width="402" height="319" rx="21.5" fill="none" stroke="#2B303B"/></g>
+  <text x="38" y="145" class="zh cream" font-size="15" font-weight="700">直接履约</text><text x="405" y="145" text-anchor="end" class="zh lime" font-size="13" font-weight="700">完成证据正在累积</text>
+  <image href="role-crops/role-stage-03-fighter.png" x="74" y="158" width="295" height="185" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>
+  <rect x="38" y="348" width="367" height="66" rx="10" fill="#2B303B" stroke="#414856"/>
+  <rect x="52" y="363" width="25" height="25" rx="5" fill="none" stroke="#FF715B" stroke-width="2"/><text x="89" y="369" class="zh cream" font-size="13" font-weight="600">当前兑现任务</text><text x="89" y="395" class="zh coral" font-size="16" font-weight="800">提交本周项目周报</text><text x="392" y="395" text-anchor="end" class="zh cream" font-size="13">完成后记入证据</text>
+
+  <text x="20" y="472" class="zh ink" font-size="16" font-weight="800">行动完成证据</text><text x="423" y="472" text-anchor="end" class="zh stone" font-size="13">按真实完成时间排列</text>
+  <line x1="32" y1="501" x2="32" y2="586" stroke="#D6C8AC" stroke-width="2"/>
+  <rect x="24" y="493" width="16" height="16" rx="3" fill="#C9F266"/><path d="M28 501l3 3 5-6" fill="none" stroke="#171C26" stroke-width="1.8" class="round"/>
+  <text x="56" y="506" class="zh ink" font-size="16" font-weight="700">发出版本确认</text><text x="56" y="529" class="zh stone" font-size="13">今天 10:05 · 真实任务完成</text>
+  <rect x="24" y="560" width="16" height="16" rx="3" fill="#C9F266"/><path d="M28 568l3 3 5-6" fill="none" stroke="#171C26" stroke-width="1.8" class="round"/>
+  <text x="56" y="573" class="zh ink" font-size="16" font-weight="700">整理交付文件</text><text x="56" y="596" class="zh stone" font-size="13">昨天 17:40 · 真实任务完成</text>
+
+  <rect x="20" y="623" width="403" height="94" rx="10" fill="#FFF9ED" stroke="#D6C8AC"/>
+  <text x="36" y="649" class="zh ink" font-size="15" font-weight="800">持续成长</text><text x="407" y="649" text-anchor="end" class="zh ink" font-size="14" font-weight="700">本周 4 条完成证据</text>
+  <rect x="36" y="665" width="371" height="8" rx="4" fill="#D6C8AC"/><rect x="36" y="665" width="232" height="8" rx="4" fill="#C9F266"/>
+  <text x="36" y="699" class="zh stone" font-size="13">只累计真实完成；中断不会清空已经留下的证据。</text>
+
+  <rect x="20" y="748" width="403" height="48" rx="10" fill="#171C26"/><text x="221.5" y="778" text-anchor="middle" class="zh cream" font-size="16" font-weight="800">回应履契拳师</text>
+  <text x="20" y="821" class="zh stone" font-size="14">互动只提供陪伴反馈，不增加 XP 或持续成长进度。</text>
+  <rect x="0" y="846" width="443" height="50" fill="#FFF9ED"/><text x="20" y="868" class="zh ink" font-size="14" font-weight="700">兑现不等于催促</text><text x="20" y="889" class="zh stone" font-size="13">没完成的事留在清单里，不评价你，也不扣除成长。</text>
+  <rect x="0" y="908" width="443" height="72" fill="#FFF9ED"/><line x1="0" y1="908.5" x2="443" y2="908.5" class="line"/>
+  <g transform="translate(56 922)" fill="none" stroke="#6B665D" stroke-width="1.8" class="round"><rect x="-8" y="0" width="16" height="18" rx="2"/><path d="M-3-3v5M3-3v5M-4 8l3 3 5-5"/></g><g transform="translate(166 922)" fill="none" stroke="#6B665D" stroke-width="1.8" class="round"><rect x="-9" y="0" width="18" height="18" rx="2"/><path d="M-4-3v5M4-3v5M-5 7h10M-5 11h7"/></g><rect x="270" y="926" width="14" height="14" rx="3" fill="#171C26"/><rect x="274" y="930" width="6" height="6" rx="1" fill="#C9F266"/><g transform="translate(387 921)" fill="none" stroke="#6B665D" stroke-width="1.8" class="round"><circle cx="0" cy="4" r="4"/><path d="M-8 18c1-5 4-7 8-7s7 2 8 7"/></g>
+  <text x="56" y="960" text-anchor="middle" class="zh stone" font-size="13">今天</text><text x="166" y="960" text-anchor="middle" class="zh stone" font-size="13">长期</text><rect x="222" y="916" width="109" height="52" rx="26" fill="#E8F4D4"/><text x="277" y="960" text-anchor="middle" class="zh ink" font-size="13" font-weight="800">怪兽</text><rect x="250" y="975" width="54" height="3" rx="1.5" fill="#C9F266"/><text x="387" y="960" text-anchor="middle" class="zh stone" font-size="13">我的</text>
+</svg>

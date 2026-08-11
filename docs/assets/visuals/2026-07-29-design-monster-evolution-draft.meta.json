@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T-DIGIPET-001",
+  "date": "2026-07-29",
+  "useCase": "ui-mockup",
+  "assetType": "mobile product UI visual decision draft",
+  "screen": "monster-evolution",
+  "designDirection": "掌上回响站",
+  "decisionUse": "验证当下陪伴、进化预期与真实任务成长能否在同一主场清晰表达",
+  "status": "draft",
+  "recommended": true,
+  "generator": {
+    "mode": "built-in image_gen",
+    "referenceImages": [
+      "2026-07-29-design-today-mainstage-draft.png"
+    ]
+  },
+  "output": {
+    "file": "2026-07-29-design-monster-evolution-draft.png",
+    "width": 853,
+    "height": 1844,
+    "format": "png"
+  },
+  "review": {
+    "directionGate": "pass",
+    "qaEvidence": false,
+    "knownLimitations": [
+      "图中的专注/坚持/共鸣三通道是待PM确认的叙事提案，MVP不得据此新增数值模型",
+      "推荐实施基线仍以现有currentLevelXp/xpToNextLevel为唯一进化进度",
+      "图像生成的中文与图标只作观感参考，最终实现以DESIGN.md与真实组件为准",
+      "仍待用户确认角色轮廓、暗色主场与进化信息密度"
+    ]
+  }
+}

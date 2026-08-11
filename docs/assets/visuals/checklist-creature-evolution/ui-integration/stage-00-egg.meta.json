@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T-DIGIPET-007A",
+  "date": "2026-08-05",
+  "useCase": "ui-mockup",
+  "assetType": "deterministic mobile product UI visual decision draft",
+  "screen": "stage-00-egg",
+  "designDirection": "掌上回响站",
+  "decisionUse": "验证初诺契茧在回响积累2/3时的角色主场、真实完成条件、孵化轨迹、最近证据与无压力说明能否在443x980中清晰共存",
+  "status": "ready_for_qa",
+  "generator": {
+    "mode": "authored SVG plus deterministic browser render",
+    "sourceFile": "stage-00-egg.source.svg",
+    "renderer": "Microsoft Edge 151 headless",
+    "deviceScaleFactor": 1,
+    "generativeImageUsed": false
+  },
+  "referenceAssets": [
+    {
+      "file": "../pixel-art/eggs/egg-glow-states-pixel-v3.png",
+      "role": "rendered middle-state egg asset",
+      "width": 1728,
+      "height": 972,
+      "sha256": "5b89d986a6a0c29ab3949a1c06cd9e49eba08312d104e54aa4d57c0e74b24a4f",
+      "cropViewBox": [590, 70, 548, 800],
+      "transform": "preserveAspectRatio xMidYMid meet; pixelated sampling; no redraw, recolor, mirror or warp"
+    },
+    {
+      "file": "../pixel-art/eggs/egg-turnaround-pixel-v7.png",
+      "role": "read-only geometry verification",
+      "width": 1728,
+      "height": 972,
+      "sha256": "3e0c1002bfbcd744c47eaaebf387f382eb274ac57b17d117637e31a0c0633021"
+    }
+  ],
+  "output": {
+    "file": "stage-00-egg.png",
+    "width": 443,
+    "height": 980,
+    "format": "png",
+    "bytes": 53848,
+    "sha256": "4d9eadb016512cb77f1dc66e11dcc09afd5a689b8e24c7b90e7dc7fc89d0bcfd"
+  },
+  "content": {
+    "identity": "初诺契茧",
+    "species": "契响卷灵",
+    "state": "回响积累",
+    "promiseProgress": "2/3",
+    "trajectory": ["未唤醒", "回响积累", "临近孵化"],
+    "evidenceRows": 2,
+    "petActionVisible": false,
+    "juvenileVisible": false
+  },
+  "review": {
+    "directionGate": "pass",
+    "qaEvidence": false,
+    "textComposedAfterImageGeneration": true,
+    "bodyContrastMinimum": "4.5:1",
+    "knownLimitations": [
+      "这是设计交接稿，不是实现截图",
+      "最近回响使用代表性真实任务文案，后续实现必须绑定实际完成记录",
+      "375px与200%大字行为以shared-stage-layout.md为事实源"
+    ]
+  }
+}

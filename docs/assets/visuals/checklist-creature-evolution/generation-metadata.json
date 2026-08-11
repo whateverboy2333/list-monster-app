@@ -1,0 +1,40 @@
+{
+  "task_id": "T-DIGIPET-004",
+  "asset_name": "checklist-creature-evolution-concept-v1.png",
+  "use_case": "stylized-concept",
+  "generator_mode": "built-in image_gen",
+  "generation_date": "2026-07-29",
+  "source_output": "C:\\Users\\Administrator\\.codex\\generated_images\\019fac6b-7388-7681-a0cd-78800f5ccb18\\call_nYyWHlWDqTgikcl4CADftVnS.png",
+  "workspace_output": "C:\\Users\\Administrator\\Documents\\清单怪兽app\\docs\\assets\\visuals\\checklist-creature-evolution\\checklist-creature-evolution-concept-v1.png",
+  "prompt_file": "final-prompt.txt",
+  "design_notes_file": "design-notes.md",
+  "width_px": 1693,
+  "height_px": 929,
+  "pixel_format": "24-bit RGB",
+  "file_size_bytes": 1995686,
+  "sha256": "05708C35E0416658BF4790937B2D1A8E14E5507ACE1ED8F0BAEE0CA6C635E559",
+  "generation_attempts": 1,
+  "selected_attempt": 1,
+  "targeted_iteration": {
+    "performed": false,
+    "reason": "首轮已满足三形态完整展示、分支可读、血统锚点一致、两种完全体轮廓区分和安全限制；避免无目的重绘引入一致性回退。"
+  },
+  "visual_review": {
+    "exactly_three_characters": true,
+    "all_characters_uncropped": true,
+    "branch_path_readable_without_labels": true,
+    "juvenile_is_animal_shaped": true,
+    "juvenile_parchment_contract_material": true,
+    "boxer_is_non_horror_mummy_inspired": true,
+    "boxer_action_logic_readable": true,
+    "scholar_is_book_constructed": true,
+    "scholar_planning_accumulation_logic_readable": true,
+    "shared_eye_anchor": true,
+    "shared_checklist_anchor": true,
+    "shared_seal_binding_anchor": true,
+    "shared_palette_anchor": true,
+    "clean_light_background": true,
+    "no_extra_characters": true,
+    "no_watermark_logo_or_trademark": true
+  }
+}

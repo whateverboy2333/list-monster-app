@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="958" height="1068" viewBox="0 0 958 1068" role="img" aria-labelledby="title desc">
+  <title id="title">初诺契茧蛋体比例 R1 左右对照</title>
+  <desc id="desc">左侧为旧稿，右侧为 R1。R1 使用最终蛋资产透明裁切等比显示，并以短宽光晕替代窄长观察窗。</desc>
+  <rect width="958" height="1068" fill="#171C26"/>
+  <text x="24" y="36" fill="#FFF9ED" font-family="Microsoft YaHei, Source Han Sans SC, sans-serif" font-size="18" font-weight="700">左 · 旧稿：窄长观察窗</text>
+  <text x="491" y="36" fill="#C9F266" font-family="Microsoft YaHei, Source Han Sans SC, sans-serif" font-size="18" font-weight="700">右 · R1：等比蛋体 + 短宽光晕</text>
+  <line x1="479" y1="55" x2="479" y2="1048" stroke="#6B665D" stroke-width="1"/>
+  <image href="stage-00-egg.png" x="24" y="64" width="443" height="980" preserveAspectRatio="xMidYMid meet"/>
+  <image href="stage-00-egg-r1.png" x="491" y="64" width="443" height="980" preserveAspectRatio="xMidYMid meet"/>
+</svg>

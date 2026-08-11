@@ -1,0 +1,72 @@
+{
+  "task_id": "T-DIGIPET-006",
+  "production_date": "2026-07-30",
+  "production_mode": "built-in image_gen generation with identity-preserve references",
+  "use_cases": [
+    "stylized-concept",
+    "identity-preserve"
+  ],
+  "egg": {
+    "name": "初诺契茧",
+    "hatches_into": "诺卷仔",
+    "pattern_code": {
+      "base_material": "M-PARCHMENT-ROLL",
+      "main_signature": "S-CLAUSE-HELIX-3",
+      "seal_node": "N-CORAL-WAX-OFFSET",
+      "hatch_light_path": "L-LIME-STITCH-ASCEND"
+    }
+  },
+  "references": [
+    {
+      "path": "C:\\Users\\Administrator\\Documents\\清单怪兽app\\docs\\assets\\visuals\\checklist-creature-evolution\\checklist-creature-evolution-concept-v5.png",
+      "role": "approved juvenile lineage and rendering reference",
+      "sha256": "5EAE86DF15218B10976C69C04BBD86A686D646035CBB125A637B225ADC001CC8"
+    },
+    {
+      "path": "C:\\Users\\Administrator\\Documents\\清单怪兽app\\docs\\assets\\visuals\\checklist-creature-evolution\\growth-stage\\contract-creature-growth-stage-concept.png",
+      "role": "approved shared growth-stage lineage reference",
+      "sha256": "90F50FC98933B4484EECCBC18011162FF5E0810FB4D1F236E6BA6D67F0926694"
+    }
+  ],
+  "outputs": [
+    {
+      "asset_name": "first-promise-contract-cocoon-multiview.png",
+      "purpose": "same egg design shown from three viewing angles",
+      "width_px": 1692,
+      "height_px": 929,
+      "pixel_format": "24-bit RGB",
+      "bytes": 2108316,
+      "sha256": "510F683EA87967550618579AB0ACE1DB06AADAB52F63E50AB6B8B2437922C584"
+    },
+    {
+      "asset_name": "first-promise-contract-cocoon-hatching-states.png",
+      "purpose": "dormant, echo-accumulating, and near-hatching sequence",
+      "width_px": 1693,
+      "height_px": 929,
+      "pixel_format": "24-bit RGB",
+      "bytes": 2141474,
+      "sha256": "0404D40C43E0CF3D67B757C411B4B05CF4A18DF3901C72C28302486A591E63E2"
+    }
+  ],
+  "documentation": {
+    "design_notes": "design-notes.md",
+    "final_prompts": "final-prompts.txt"
+  },
+  "verification": {
+    "v5_juvenile_visually_inspected_before_generation": true,
+    "growth_stage_visually_inspected_before_generation": true,
+    "multiview_output_visually_inspected_after_save": true,
+    "hatching_states_output_visually_inspected_after_save": true,
+    "species_recognizable_by_silhouette_material_and_pattern": true,
+    "main_pattern_conforms_to_shell_curvature": true,
+    "paper_fibers_clause_lines_stitch_holes_and_wax_deformation_visible": true,
+    "same_egg_design_across_views_and_states": true,
+    "dormant_accumulating_near_hatching_progression_clear": true,
+    "no_destructive_hatching_semantics": true,
+    "no_animal_anatomy_face_or_visible_juvenile": true,
+    "no_branch_specific_boxer_or_scholar_symbols": true,
+    "all_subjects_uncropped": true,
+    "no_text_labels_watermark_logo_trademark_or_existing_ip": true
+  },
+  "source_versions_preserved": true
+}

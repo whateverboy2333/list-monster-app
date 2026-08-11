@@ -1,0 +1,171 @@
+{
+  "task_id": "T-DIGIPET-006-R4",
+  "production_date": "2026-07-30",
+  "production_mode": "built-in image_gen precise-object-edit followed by deterministic fixed-silhouette motif compositing",
+  "supersedes_policy": {
+    "deprecated_rule": "SPOTMAP_STD_01 and color-only species differentiation",
+    "new_rule": "shared white mother egg plus juvenile-derived variable surface motifs",
+    "previous_files_preserved": true
+  },
+  "fixed_system": {
+    "geometry_id": "WHITE_EGG_MASTER_01",
+    "material_id": "WHITE_SHELL_SEMIMATTE_01",
+    "fixed_properties": [
+      "white rounded closed egg geometry",
+      "white semi-matte hard-shell material",
+      "proportion",
+      "camera set",
+      "lighting",
+      "grounding shadow",
+      "hatching-state emission rules"
+    ]
+  },
+  "species_variable_system": {
+    "motif_palette": {
+      "shell_base": "#F7F3E8",
+      "indigo": "#283C58",
+      "coral": "#CF6B55",
+      "lime": "#B8D94A",
+      "warm_paper_auxiliary": "#E8D8B7"
+    },
+    "primary_motif": "ECHO_CORE_RING_ASYM_01",
+    "secondary_motif": "CONTRACT_RHYTHM_SET_01",
+    "emissive_motif": "ECHO_LIME_EMISSION_01",
+    "source_juvenile": "诺卷仔"
+  },
+  "references": [
+    {
+      "path": "C:\\Users\\Administrator\\Documents\\清单怪兽app\\docs\\assets\\visuals\\checklist-creature-evolution\\checklist-creature-evolution-concept-v5.png",
+      "role": "juvenile motif and palette reference",
+      "sha256": "5EAE86DF15218B10976C69C04BBD86A686D646035CBB125A637B225ADC001CC8"
+    },
+    {
+      "path": "C:\\Users\\Administrator\\Documents\\清单怪兽app\\docs\\assets\\visuals\\checklist-creature-evolution\\pet-egg\\standard-template\\universal-dinosaur-egg-standard-multiview.png",
+      "role": "white mother-egg geometry and multi-view reference",
+      "sha256": "A57D47FD8809FB0E0D2B7F4B4C6873333C3D3D2020D8A8BBF5D666BA64D1BE99"
+    }
+  ],
+  "hatching_state_emission": {
+    "dormant": 0.15,
+    "echo_accumulating": 0.55,
+    "near_hatching": 1.0
+  },
+  "r3_fixed_base_composition": {
+    "base_instance": "left dormant egg from the R3 built-in image_gen edit candidate",
+    "cell_width_px": 541,
+    "cell_height_px": 969,
+    "copy_policy": "the same full-resolution base cell is copied into all three state positions",
+    "allowed_change": "lime emissive pixels and a local 12-pixel-radius surface glow mask only",
+    "dormant_vs_accumulating_changed_pixels": 31351,
+    "dormant_vs_near_hatching_changed_pixels": 40212,
+    "allowed_emission_mask_pixels": 43236,
+    "differences_outside_emission_mask_accumulating": 0,
+    "differences_outside_emission_mask_near_hatching": 0
+  },
+  "rotation_lock_standard": {
+    "id": "ROTATION_LOCK_STD_01",
+    "geometry_model": "vertical-axis axisymmetric surface of revolution",
+    "camera_model": "orthographic-equivalent fixed distance, focal length, pitch, center, baseline, and scale",
+    "canvas_width_px": 1624,
+    "canvas_height_px": 969,
+    "cell_width_px": 541,
+    "fixed_base_source": "first clean blank egg cell from the built-in image_gen precise edit candidate",
+    "composition_policy": "the same full-resolution geometry, material, highlight, shadow, and background base cell is copied into all three view positions; only view-specific surface-motif pixels change",
+    "motif_longitude_offsets_px": [
+      0,
+      24,
+      56
+    ],
+    "view_bboxes_xyxy_inclusive": {
+      "front": [
+        101,
+        155,
+        495,
+        793
+      ],
+      "strict_side": [
+        642,
+        155,
+        1036,
+        793
+      ],
+      "front_three_quarter": [
+        1183,
+        155,
+        1577,
+        793
+      ]
+    },
+    "bbox_width_px_each": 395,
+    "bbox_height_px_each": 639,
+    "max_width_delta_px": 0,
+    "max_height_delta_px": 0,
+    "top_delta_px": 0,
+    "bottom_delta_px": 0,
+    "measurement_method": "independent post-save visual inspection plus fixed-cell pixel-coordinate measurement against the shared full-resolution blank geometry base"
+  },
+  "outputs": [
+    {
+      "asset_name": "white-dinosaur-egg-juvenile-motif-multiview.png",
+      "purpose": "front, side, and front-three-quarter views of the white mother egg with juvenile-derived motif",
+      "width_px": 1624,
+      "height_px": 969,
+      "pixel_format": "24-bit RGB",
+      "bytes": 1613449,
+      "sha256": "00AFD9CC9E2BDDAE757C787F7EE32465655727B80CED2A0F3B14C5629A63B263"
+    },
+    {
+      "asset_name": "white-dinosaur-egg-juvenile-motif-rotation-locked-multiview.png",
+      "purpose": "front, strict-side, and front-three-quarter views with identical axisymmetric outer contour and rotating surface motifs",
+      "width_px": 1624,
+      "height_px": 969,
+      "pixel_format": "24-bit RGB",
+      "bytes": 756094,
+      "sha256": "E22CC94C4E13B886EECBC5EC63C350F0DFB3CD5E80D6CC8453384F5FFD9AA487"
+    },
+    {
+      "asset_name": "white-dinosaur-egg-juvenile-motif-hatching-states.png",
+      "purpose": "same-view dormant, echo-accumulating, and near-hatching emission sequence",
+      "width_px": 1624,
+      "height_px": 969,
+      "pixel_format": "24-bit RGB",
+      "bytes": 873054,
+      "sha256": "1C1C47AD1F0E00FD91F8A8F2CB83FCF5C1862146B9F86293B554E3F55CB30F86"
+    }
+  ],
+  "documentation": {
+    "design_spec": "design-spec.md",
+    "final_prompts": "final-prompts.txt"
+  },
+  "verification": {
+    "skill_and_required_references_read": true,
+    "juvenile_reference_visually_inspected_before_generation": true,
+    "mother_egg_reference_visually_inspected_before_generation": true,
+    "multiview_output_visually_inspected_after_save": true,
+    "hatching_states_output_visually_inspected_after_save": true,
+    "reads_as_white_rounded_dinosaur_egg_at_first_glance": true,
+    "white_shell_remains_dominant": true,
+    "traditional_random_spots_fully_removed": true,
+    "motifs_traceable_to_juvenile": true,
+    "all_motifs_are_flat_surface_graphics": true,
+    "motifs_follow_curvature_and_occlusion": true,
+    "rotation_lock_standard_applied": true,
+    "axisymmetric_outer_contour_locked_across_views": true,
+    "same_camera_baseline_scale_and_occupancy_across_views": true,
+    "front_side_and_three_quarter_bboxes_measured": true,
+    "maximum_bbox_width_or_height_delta_px": 0,
+    "surface_motifs_rotate_without_geometry_change": true,
+    "side_and_three_quarter_are_not_front_texture_copies": true,
+    "asymmetric_without_forming_a_face": true,
+    "same_fixed_base_instance_across_hatching_states": true,
+    "outer_silhouette_pixel_consistent_across_states": true,
+    "camera_angle_pixel_consistent_across_states": true,
+    "same_geometry_and_motif_projection_across_hatching_states": true,
+    "non_emissive_pixels_identical_outside_glow_mask": true,
+    "differences_outside_allowed_emission_mask": 0,
+    "only_lime_emission_strength_changes_across_states": true,
+    "all_eggs_uncropped_and_unbroken": true,
+    "no_text_watermark_logo_pet_juvenile_or_existing_ip": true,
+    "all_previous_pet_egg_files_preserved": true
+  }
+}

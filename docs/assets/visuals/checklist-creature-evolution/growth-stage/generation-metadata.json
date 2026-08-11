@@ -1,0 +1,63 @@
+{
+  "task_id": "T-DIGIPET-005",
+  "production_date": "2026-07-30",
+  "production_mode": "built-in image_gen generation with targeted image edits",
+  "use_cases": [
+    "stylized-concept",
+    "precise-object-edit"
+  ],
+  "baseline": {
+    "path": "C:\\Users\\Administrator\\Documents\\清单怪兽app\\docs\\assets\\visuals\\checklist-creature-evolution\\checklist-creature-evolution-concept-v5.png",
+    "role": "locked lineage and approved-form identity reference",
+    "bytes": 3030950,
+    "sha256": "5EAE86DF15218B10976C69C04BBD86A686D646035CBB125A637B225ADC001CC8"
+  },
+  "character": {
+    "name": "联页契灵",
+    "stage": "成长体",
+    "attribute": "契约／适应",
+    "ability": "双向续页"
+  },
+  "outputs": [
+    {
+      "asset_name": "contract-creature-growth-stage-concept.png",
+      "purpose": "standalone shared growth-stage concept",
+      "width_px": 1693,
+      "height_px": 929,
+      "pixel_format": "24-bit RGB",
+      "bytes": 1887145,
+      "sha256": "90F50FC98933B4484EECCBC18011162FF5E0810FB4D1F236E6BA6D67F0926694"
+    },
+    {
+      "asset_name": "contract-creature-four-form-evolution.png",
+      "purpose": "juvenile to growth stage to equal Y-shaped complete-form branches",
+      "width_px": 1693,
+      "height_px": 929,
+      "pixel_format": "24-bit RGB",
+      "bytes": 1882945,
+      "sha256": "FC5E6965D2FE7737F66E4B0B56986B2C645BCC7B90B4BA5645F75A47C4FAE929"
+    }
+  ],
+  "documentation": {
+    "design_notes": "design-notes.md",
+    "final_prompts": "final-prompts.txt"
+  },
+  "verification": {
+    "baseline_visually_inspected_before_generation": true,
+    "standalone_output_visually_inspected_after_save": true,
+    "four_form_output_visually_inspected_after_save": true,
+    "growth_stage_is_more_structured_than_juvenile": true,
+    "growth_stage_is_less_complete_than_both_complete_forms": true,
+    "action_and_planning_branch_hints_are_balanced": true,
+    "shared_parchment_green_core_coral_seal_indigo_binding_lineage": true,
+    "non_animal_head_language": true,
+    "boxer_full_head_bandage_identity_preserved": true,
+    "scholar_corrected_book_bound_head_identity_preserved": true,
+    "juvenile_growth_and_y_branch_direction_is_explicit": true,
+    "exactly_one_character_in_standalone": true,
+    "exactly_four_characters_in_evolution_sheet": true,
+    "all_characters_ribbons_paths_and_shadows_uncropped": true,
+    "no_written_labels_watermark_logo_trademark_or_existing_ip": true
+  },
+  "source_versions_preserved": true
+}

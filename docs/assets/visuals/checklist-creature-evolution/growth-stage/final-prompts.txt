@@ -1,0 +1,57 @@
+PRODUCTION MODE
+Built-in image_gen tool. Use case: stylized-concept for generation and precise-object-edit for targeted revisions.
+
+IMAGE 1 — STANDALONE GROWTH STAGE
+
+Use case: stylized-concept
+Asset type: original 2D collectible-game character concept art, standalone common growth-stage creature
+Input images: Image 1 is the locked lineage and rendering reference. Match its warm ivory parchment, lime-green magical completion glow, coral wax seal, indigo stitching/binding, restrained antique-gold edges, clean linework, soft cel shading, tactile paper texture, friendly bright presentation. Do not copy a whole existing character.
+Primary request: Design exactly one new shared growth-stage form for the abstract living parchment-contract monster lineage, visibly between the small floating juvenile on the left and both complete forms on the right. It is the common stage before the boxer/scholar branch, not a third complete form.
+Scene/backdrop: clean pale warm off-white concept-art background, nearly uniform, with only a subtle soft grounding shadow; no scenery.
+Subject construction: a medium-small upright hovering contract construct, about 1.35 times the juvenile's apparent mass and much less massive/ornate than either complete form. The body is a stable vertical contract spindle made from three interlocked accordion-folded parchment tiers around one central rolled contract axis. A coral wax seal is the visible chest/core. An indigo stitched binding line runs through and organizes the tiers like a proto-spine. Bold checkbox/checkmark clause segments are structural parts of the torso.
+Head language: no conventional head or face. At the top, create an original half-open binder-knot/rolled-page aperture made from layered offset parchment crescents and one short vertical stitched hinge. Inside the dark indigo paper-layer cavity is one large off-center lime-green glowing visual core and, separated on the other side, one small green checkmark rune. No nose, mouth, muzzle, cheeks, or paired pet eyes. It must not copy the boxer's fully bandage-wrapped round head or the scholar's book-cover/page-crown head.
+Branch-neutral mobility structures: two long articulated parchment ribbons emerge through page-hinge loops at the upper sides. Each ribbon has both a loose spiral section that could later tighten into a bandage-wrapped striking arm and a flat layered folio section that could later unfold into book pages and a book spine. Keep both sides and both possible futures equally weighted. The ends are simple blunt folded tabs with checkbox marks: no fists, gloves, fingers, hands, weapons, completed sleeves, finished book covers, or completed robe. These dual-purpose ribbons rest in a neutral ready pose, slightly extended but not punching or reading.
+Lower body/evolution logic: the juvenile's single coiled paper spring has matured into one central braided scroll-spring column that splits only at the very bottom into two wide folded landing vanes, enabling stable upright movement without forming animal legs, paws, human boots, or a four-legged skeleton. Several short layered page panels hang from the lower tier as proto-coattails/proto-book leaves, still modest and unfinished.
+Silhouette: independently recognizable as a vertically balanced scroll-spindle with a crescent binder aperture, two looped articulated paper ribbons, and a single split-base scroll spring. More structured, stable, capable, and complex than the juvenile; clearly smaller and simpler than the boxer and scholar. Its silhouette must not read as dog, cat, fox, rabbit, raccoon, mammal, ordinary human, or ordinary mummy.
+Mood/personality: attentive, adaptable, experimentally confident, poised before choosing action or planning.
+Composition/framing: exactly one complete character, full body visible, centered three-quarter front view, generous empty margin on all sides, no crop, no inset, no prop sheet, no second pose.
+Text: no written words, labels, letters, numbers, captions, or UI; only square checkbox and checkmark pictograms integrated into the paper.
+Constraints: no extra character; no watermark; no logo; no trademark; no border; no scenery; no existing-IP symbols; no pet face; no animal ears; no horns; no animal muzzle; no fur; no tail; no four limbs; no quadruped anatomy; no ordinary human face; no horror; no skull; no corpse; no gore; no finished boxing gloves; no finished bandage mummy head; no finished scholar book-box head; no grand book robe or page crown; no asymmetrical preference toward either complete branch.
+
+IMAGE 2 — FOUR-FORM EVOLUTION SHEET BASE
+
+Use case: stylized-concept
+Asset type: final 2D collectible-game four-form evolution concept sheet
+Input images: Image 1 is the locked V5 evolution sheet and identity reference for the three approved forms. Image 2 is the exact identity reference for the newly approved shared growth-stage form.
+Primary request: Create one clean landscape evolution sheet that clearly shows exactly four complete characters in the sequence: Image 1's abstract floating juvenile on the far left -> Image 2's shared growth-stage creature in the center-left -> a luminous lime-green Y-shaped branch -> Image 1's fully paper-bandage-wrapped boxer on the upper right and Image 1's book/page/spine scholar on the lower right.
+Locked identity invariants: preserve the juvenile's asymmetrical hovering rolled-contract lantern body, one broad page sail, one off-center large green eye plus checkmark rune, coral center wax seal, indigo stitches, checklist strip, and single coiled paper-spring base. Preserve the growth form from Image 2: crescent binder-knot aperture with one off-center green core plus check rune, coral chest seal, indigo proto-spine, three contract tiers, two equally weighted looped dual-purpose paper ribbons, modest layered folio panels, and split-base scroll spring. Preserve the boxer from Image 1: whole round head covered by overlapping parchment bandages with only two lime-green eyes in a dark indigo slit, giant contract-paper boxing gloves, fighting stance, coral waist seal, and checklist marks. Preserve the scholar from Image 1: book-cover and layered-page head with central indigo binding and only two green eyes in a dark page gap, page crown, book-cover shoulders, central checklist tome, layered book robe, and page ribbons. Do not restore any old animal face or redesign any approved head.
+Evolution hierarchy: the growth stage is visibly larger, more upright, more structured, more stable, and more mobile than the juvenile, but clearly smaller, simpler, and less equipped than both complete forms. It must read as the common form before choosing action or planning, not as a third complete branch. Both boxer and scholar routes receive equal visual weight.
+Path diagram: use a simple luminous lime-green path with square check nodes and arrowheads only. One arrow connects juvenile to growth stage. A second short arrow connects growth stage to a single branch node. From that node, two equally bright/equally thick paths split upward to the boxer and downward to the scholar. No line crosses a character.
+Scene/backdrop: clean pale warm off-white concept-art background with subtle grounding shadows only; no scenery.
+Style/medium: match Image 1 and Image 2 polished original 2D collectible-game concept art, clean linework, soft cel shading, tactile parchment, friendly bright presentation.
+Composition/framing: wide landscape sheet; juvenile far left, growth stage center-left, branch node center, boxer upper right, scholar lower right; generous margins; all four characters fully visible and uncropped; no extra creature, duplicate pose, inset, prop sheet, border, or UI panel.
+Shared lineage palette: warm ivory parchment, lime-green completion/check glow, coral wax seals, indigo stitching/binding, restrained antique gold.
+Text: no written words, labels, letters, numbers, captions, titles, or UI text; only square checkbox and checkmark pictograms.
+Constraints: exactly four complete characters; no watermark; no logo; no trademark; no existing-IP symbol; no dog/cat/fox/rabbit face; no pet ears; no muzzle; no fur; no quadruped skeleton; no ordinary human face; no horror; no gore; no skull; no corpse. Growth-stage branch hints must remain balanced: no finished fist/glove, no finished mummy head, no finished book-box head, no grand book robe, and no page crown on the growth stage.
+
+IMAGE 2 — FINAL MARGIN REVISION
+
+Use case: precise-object-edit
+Asset type: final four-form evolution concept sheet
+Input images: Image 1 is the edit target.
+Primary request: Fix only the canvas safety margins. Keep the exact same four character identities, designs, colors, rendering style, left-to-right stage order, relative hierarchy, poses, luminous path, check nodes, and Y-shaped branching relationship. Uniformly scale and reposition the full composition inward just enough that every parchment ribbon, page tip, shadow, arrowhead, and character silhouette is completely visible with generous pale-background padding on all four sides.
+Composition/framing: preserve the juvenile far left, growth stage center-left, branch node center, boxer upper right, scholar lower right. Maintain clearly readable juvenile -> growth -> Y-shaped split. Make all four characters slightly smaller if necessary. Do not crop or let any ribbon touch the frame.
+Locked details: juvenile remains the asymmetrical one-eyed hovering contract lantern with single spring base; growth remains the crescent-aperture upright contract spindle with off-center green core/check rune and two balanced looped paper ribbons; boxer remains whole-head paper-bandage wrapped with only two green eyes in the dark slit and giant paper gloves; scholar remains the book/page/spine figure with corrected non-animal book-bound head, green eyes, page crown, book shoulders, checklist tome and book robe.
+Text: no written words, labels, letters, or numbers; only checkbox/checkmark pictograms.
+Constraints: change only scale/placement/margins; exactly four characters; preserve pale clean background; no extra character; no redesign; no old animal face; no watermark; no logo; no border; no scenery; no UI; no crop anywhere.
+
+IMAGE 2 — FINAL PATH-DIRECTION REVISION
+
+Use case: precise-object-edit
+Asset type: final four-form evolution concept sheet
+Input images: Image 1 is the edit target.
+Primary request: Change only the two short horizontal lime-green evolution path segments before the Y branch so progression is unmistakable. Add a small clear right-pointing arrowhead on the path from the juvenile toward the growth stage, and a small clear right-pointing arrowhead on the path from the growth stage toward the single Y-branch node. Keep the existing check nodes. Do not move, resize, repaint, or redesign any character, ribbon, shadow, branch, or background.
+Locked invariants: exactly the same four characters and all their current details; same generous margins; same positions and scale; same upper and lower Y arrows; no crop.
+Text: no words, labels, letters, or numbers; only checkmarks and path arrows.
+Constraints: edit only the two small horizontal path segments; no extra symbol except the two arrowheads; no extra character; no watermark; no logo; no border; no scenery; no UI.
+

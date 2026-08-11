@@ -1,0 +1,33 @@
+{
+  "task_id": "T-DIGIPET-004-R4",
+  "asset_name": "checklist-creature-evolution-concept-v5.png",
+  "production_mode": "local deterministic pixel compositing",
+  "production_date": "2026-07-29",
+  "base_asset": "checklist-creature-evolution-concept-v3.png",
+  "head_source_asset": "checklist-creature-evolution-concept-v4.png",
+  "design_notes_file": "design-notes-v5.md",
+  "processing_record_file": "processing-record-v5.json",
+  "width_px": 1693,
+  "height_px": 929,
+  "pixel_format": "24-bit RGB",
+  "file_size_bytes": 3030950,
+  "sha256": "5EAE86DF15218B10976C69C04BBD86A686D646035CBB125A637B225ADC001CC8",
+  "source_versions_preserved": [
+    "checklist-creature-evolution-concept-v1.png",
+    "checklist-creature-evolution-concept-v2.png",
+    "checklist-creature-evolution-concept-v3.png",
+    "checklist-creature-evolution-concept-v4.png"
+  ],
+  "verification": {
+    "same_dimensions_as_v3": true,
+    "v3_used_as_pixel_base": true,
+    "different_pixel_count": 26855,
+    "difference_bbox": "1101,517,1308,683",
+    "different_pixels_outside_allowed_region": 0,
+    "outside_region_pixel_identity": true,
+    "visual_seam_passed": true,
+    "scholar_head_direction_preserved": true,
+    "exactly_three_uncropped_characters": true,
+    "no_extra_text_watermark_logo_or_trademark": true
+  }
+}

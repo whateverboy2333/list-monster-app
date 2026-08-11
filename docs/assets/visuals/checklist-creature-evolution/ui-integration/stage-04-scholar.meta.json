@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T-DIGIPET-007B",
+  "date": "2026-08-05",
+  "screen": "stage-04-scholar",
+  "identity": "万策卷贤",
+  "stage": "完全体·规划复盘分支",
+  "status": "ready_for_qa",
+  "source": {
+    "file": "../pixel-art/checklist-creature-pixel-evolution-v3-r3.png",
+    "width": 1693,
+    "height": 929,
+    "sha256": "d4b38d877a3674d38339578cd5777a44bc70ed675c17de23dd22b91b33f95361",
+    "cropBox": [1030, 430, 1650, 890]
+  },
+  "derivedRole": {
+    "file": "role-crops/role-stage-04-scholar.png",
+    "width": 612,
+    "height": 443,
+    "sha256": "ac10aefa4d6501309f2b801ce1909608d092b72a7d538fd7c791a5b02438584a",
+    "processing": "confirmed background and neutral hard-white transparency; left branch-arrow spatial cleanup; isolated background noise removal; no redraw or geometric transform"
+  },
+  "generator": {
+    "mode": "authored SVG plus deterministic browser render",
+    "sourceFile": "stage-04-scholar.source.svg",
+    "renderer": "Microsoft Edge 151 headless",
+    "generativeImageUsed": false
+  },
+  "output": {
+    "file": "stage-04-scholar.png",
+    "width": 443,
+    "height": 980,
+    "bytes": 119978,
+    "sha256": "e32744ce8b593e2fd05eb8594d66f7783c3a02b665249c7a4fb1f64691ae6347"
+  },
+  "responsiveAudit": {
+    "width375": "pass_paired_cards",
+    "largeText200": "requires_equal_vertical_stack",
+    "risk": "medium"
+  },
+  "review": {
+    "planningEvidenceVisible": true,
+    "magicSystemVisible": false,
+    "petInteractionAddsXp": false,
+    "bodyContrastMinimum": "4.5:1",
+    "qaEvidence": false
+  }
+}

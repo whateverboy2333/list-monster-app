@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T-DIGIPET-007B",
+  "date": "2026-08-05",
+  "screen": "stage-03-fighter",
+  "identity": "履契拳师",
+  "stage": "完全体·直接履约分支",
+  "status": "ready_for_qa",
+  "source": {
+    "file": "../pixel-art/checklist-creature-pixel-evolution-v3-r3.png",
+    "width": 1693,
+    "height": 929,
+    "sha256": "d4b38d877a3674d38339578cd5777a44bc70ed675c17de23dd22b91b33f95361",
+    "cropBox": [1039, 39, 1644, 422]
+  },
+  "derivedRole": {
+    "file": "role-crops/role-stage-03-fighter.png",
+    "width": 594,
+    "height": 375,
+    "sha256": "be333d49209c389fa9c987c1c5728cb7a42d1d1615f588a9a69e0b215c2db2d7",
+    "processing": "confirmed background and neutral hard-white transparency; lower-left branch-arrow cleanup; isolated background noise removal; no redraw or geometric transform"
+  },
+  "generator": {
+    "mode": "authored SVG plus deterministic browser render",
+    "sourceFile": "stage-03-fighter.source.svg",
+    "renderer": "Microsoft Edge 151 headless",
+    "generativeImageUsed": false
+  },
+  "output": {
+    "file": "stage-03-fighter.png",
+    "width": 443,
+    "height": 980,
+    "bytes": 101994,
+    "sha256": "9e91e68c5ea26b552aa65a30782b5943f7da6205b3505faa23cdae6636a42afd"
+  },
+  "responsiveAudit": {
+    "width375": "pass_with_wrapping",
+    "largeText200": "pass_with_stage_growth",
+    "risk": "low"
+  },
+  "review": {
+    "actionEvidenceVisible": true,
+    "combatSystemVisible": false,
+    "petInteractionAddsXp": false,
+    "bodyContrastMinimum": "4.5:1",
+    "qaEvidence": false
+  }
+}
+

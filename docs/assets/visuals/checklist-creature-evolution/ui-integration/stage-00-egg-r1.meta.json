@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T-DIGIPET-007A-R1",
+  "date": "2026-08-05",
+  "screen": "stage-00-egg-r1",
+  "status": "implementation_baseline",
+  "supersedes": "stage-00-egg.png",
+  "generator": {
+    "mode": "authored SVG plus deterministic browser render",
+    "sourceFile": "stage-00-egg-r1.source.svg",
+    "sourceSha256": "4a07116f7b66dc99ed8c32903be3c7a73fc5787e855024d31c8c9471c54f4720",
+    "renderer": "Microsoft Edge 151 headless",
+    "deviceScaleFactor": 1,
+    "generativeImageUsed": false
+  },
+  "referenceAssets": [
+    {
+      "file": "../pixel-art/eggs/egg-glow-states-pixel-v3.png",
+      "width": 1728,
+      "height": 972,
+      "sha256": "5b89d986a6a0c29ab3949a1c06cd9e49eba08312d104e54aa4d57c0e74b24a4f",
+      "sourceObservationCrop": [590, 70, 1138, 870],
+      "effectivePixelBounds": [624, 120, 1103, 839],
+      "effectivePixelSize": [480, 720],
+      "effectiveAspectRatio": 0.666667
+    },
+    {
+      "file": "role-crops/role-stage-00-egg.png",
+      "role": "transparent pixel-identical display crop",
+      "width": 480,
+      "height": 720,
+      "alphaBounds": [0, 0, 479, 719],
+      "alphaAspectRatio": 0.666667,
+      "opaquePixelCount": 276912,
+      "rgbMismatchPixelCount": 0,
+      "sha256": "974c29b0938ae38f2003cdc7b9cd64cd056717843ec8e8cbf22393ac64c25f56"
+    },
+    {
+      "file": "../pixel-art/eggs/egg-turnaround-pixel-v7.png",
+      "role": "read-only geometry verification",
+      "sha256": "3e0c1002bfbcd744c47eaaebf387f382eb274ac57b17d117637e31a0c0633021"
+    }
+  ],
+  "displayTransform": {
+    "box": [159.5, 178, 124, 186],
+    "preserveAspectRatio": "xMidYMid meet",
+    "displayAspectRatio": 0.666667,
+    "sourceEffectiveAspectRatio": 0.666667,
+    "aspectRatioDifferencePercent": 0.0,
+    "uniformScale": true,
+    "horizontalScale": 0.258333,
+    "verticalScale": 0.258333,
+    "nonUniformScale": false
+  },
+  "compositionRevision": {
+    "oldObservationWindow": [138, 164, 167, 220],
+    "oldEffectiveEggDisplaySize": [132, 198],
+    "newEggDisplaySize": [124, 186],
+    "eggHeightReductionPixels": 12,
+    "eggHeightReductionPercent": 6.06,
+    "newHalo": {
+      "type": "ellipse",
+      "center": [221.5, 270],
+      "radii": [109, 76],
+      "size": [218, 152]
+    },
+    "groundingShadow": {
+      "center": [221.5, 365],
+      "radii": [78, 12]
+    }
+  },
+  "output": {
+    "file": "stage-00-egg-r1.png",
+    "width": 443,
+    "height": 980,
+    "format": "png",
+    "bytes": 52938,
+    "sha256": "862f0515b6029488d974a84ebebce925c5b24f5e4eb16591c8141b59d6f11d91"
+  },
+  "comparison": {
+    "file": "stage-00-egg-r1-comparison.png",
+    "width": 958,
+    "height": 1068,
+    "role": "review-only, not a formal product screen",
+    "bytes": 76421,
+    "sha256": "3894fde409255f88ef66bd2816fe281d6ebcdb5c1d7f695545ff53aac48dd105"
+  },
+  "contentPreserved": {
+    "identity": "初诺契茧",
+    "promiseProgress": "2/3",
+    "nextLightCondition": true,
+    "trajectory": ["未唤醒", "回响积累", "临近孵化"],
+    "evidenceRows": 2,
+    "noPressureNote": true,
+    "pettingVisible": false,
+    "juvenileVisible": false
+  },
+  "review": {
+    "bodyContrastMinimum": "4.77:1",
+    "textComposedAfterImageGeneration": true,
+    "textOverlap": false,
+    "textOverflow": false,
+    "overviewChangeRequired": false,
+    "overviewEvidenceFile": "stage-overview-r1-audit.source.md",
+    "originalAssetsModified": false
+  }
+}

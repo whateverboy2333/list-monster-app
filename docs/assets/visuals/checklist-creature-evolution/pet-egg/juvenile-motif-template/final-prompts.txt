@@ -1,0 +1,83 @@
+PRODUCTION MODE
+Built-in image_gen tool.
+
+IMAGE 1 — JUVENILE-MOTIF WHITE EGG MULTI-VIEW BASE
+
+Use case: precise-object-edit
+Asset type: species-motif pet egg multi-view concept sheet on the universal white dinosaur-egg master
+Input images: Image 1 is the edit target and locked universal mother-egg geometry/view/material reference. Preserve its three eggs' exact smooth plump closed dinosaur-egg silhouettes, proportions, front/side/front-three-quarter views, scale, semi-matte hard-shell pores, lighting, grounding shadows, spacing, and pale background. Image 2 is only the juvenile motif and palette reference, especially the abstract left juvenile's off-center lime eye/core, lime check rune, coral wax seal color, indigo stitching rhythm, and diagonal checklist strip. Do not include or reconstruct the juvenile.
+Primary request: Completely remove every traditional random indigo blotch, coral spot, and lime freckle from Image 1. Restore a clean white / very pale warm-white eggshell base that visually dominates. Replace the old leopard-like dinosaur spots with one coherent, asymmetric, flat 2D shell-surface motif set directly abstracted from the juvenile reference. The same exact motif map wraps around all three views of the same white mother egg.
+Locked mother egg: unmistakably a classic rounded dinosaur egg—full, plump, completely closed, smooth continuous rounded top and bottom, near rotational symmetry. No change to geometry or material. Natural semi-matte hard eggshell with fine pores and soft broad highlights; never parchment, paper, fabric, metal, stone, book, cocoon, or UI object.
+Species motif map, all flat printed/painted or extremely shallow emissive color only:
+1) Primary motif: one large off-center lime-green elliptical echo-core ring, placed high on the front-left quadrant. It is a single irregular organic oval ring with a dark indigo inner crescent and a small white center highlight, abstracting the juvenile's single green visual core without becoming an eye or face. Keep it clearly graphic and surface-bound, foreshortened around the shell curve.
+2) Secondary motif A: one separate small lime-green check-shaped rune, diagonally below and to the right of the ring, with enough distance that the pair does not form two eyes.
+3) Secondary motif B: one flat coral #CF6B55 scalloped rosette / flower-seal silhouette low on the opposite front quadrant. It is a printed matte color emblem, not wax, not raised, not embossed, not a physical seal, and contains no letters.
+4) Binding rhythm: one slender dark indigo #283C58 broken arc made of evenly spaced short dash marks curving diagonally around the egg from lower side toward upper rear. It reads as an abstract stitch rhythm painted on the shell, never a real seam, thread, hole, zipper, or structural join.
+5) Clause rhythm: one narrow pale warm-paper #E8D8B7 diagonal ribbon-like painted field crossing part of the mid/lower shell, containing only three short parallel indigo bars and two small lime rectangular ticks. It is flat surface paint, not a raised band, not a checklist UI, not paper, and contains no boxes, words, letters, or numbers.
+Composition of motifs: asymmetric, playful, sparse, with generous white shell remaining. The green ring is the main focal point, coral rosette is the counterweight, and the indigo dash arc plus narrow warm stripe guide the eye diagonally. Do not arrange motifs as facial features. Across front, side, and three-quarter views, each motif must follow shell curvature, foreshorten, disappear around the far side, and change brightness with the curved surface.
+Color palette: shell base clean white or very pale warm white #F7F3E8 occupying at least 70% of visible shell; indigo #283C58; coral #CF6B55; lime #B8D94A; warm-paper #E8D8B7 only as a small auxiliary printed field, never as shell base.
+No traditional egg spotting: absolutely no random large organic spot, circular spot, freckle cloud, leopard pattern, cow pattern, camouflage blotch, scattered generic speckle, or recolored version of Image 1's previous spots.
+Flatness constraints: every species element is printed, painted, or a very shallow emissive mark flush with the hard shell. No relief, rim, bevel, extrusion, raised wax, actual seam, stitch thread, hole, opening, paper layer, rolled edge, book part, bandage, or attached component.
+Style/medium: polished original 2D collectible-game concept art, clean restrained rendering, believable white semi-matte eggshell, crisp but surface-integrated graphic motifs, friendly bright presentation.
+Scene/backdrop: preserve the clean pale warm off-white studio-concept background with subtle grounding shadows only; no nest, prop, UI, border, callout, or scenery.
+Composition/framing: exactly three complete eggs showing the same mother egg and same motif map from front, side, and front three-quarter views; same scale; generous margins; no overlap or crop.
+Text: no written words, labels, letters, numbers, title, captions, or callouts.
+Constraints: no extra egg design, pet, juvenile, animal, face, eye pair, mouth, limb, crack, opening, fragment, watermark, logo, trademark, or existing-IP symbol.
+
+IMAGE 1 — FINAL VIEW-ROTATION REVISION
+
+Use case: precise-object-edit
+Asset type: corrected species-motif white dinosaur egg multi-view concept sheet
+Input images: Image 1 is the edit target and exact egg/motif identity reference.
+Primary request: Change only the view rotation of the center and right eggs so the sheet clearly proves three different views of the same mother egg and the same fixed surface motif map. Keep the left egg as the exact front view. Rotate the center egg to a clear strict side/profile view, showing the printed motif wrapping around the curved surface with some front motifs foreshortened or partially disappearing around the far side. Rotate the right egg to a clear front three-quarter view between the left and center. Do not redesign the egg or motif.
+Locked mother egg: preserve the same plump smooth fully closed white dinosaur-egg geometry, rounded top and bottom, proportions, semi-matte hard-shell pores, scale, lighting, background, and grounding shadow. No structural change.
+Locked species motif map: preserve the same single off-center lime elliptical echo-core ring with indigo inner crescent and white highlight, separate lime check rune, flat coral scalloped rosette, dark indigo broken dash arc, and narrow warm-paper diagonal painted field containing three short indigo bars and two small lime ticks. These are one fixed 2D texture map on the shell. Their apparent shape and visibility may change only because of the egg's rotation, foreshortening, curvature, occlusion, and lighting.
+Flatness: all motifs remain flush printed/painted or extremely shallow emissive color. No relief, emboss, raised wax, seam, thread, hole, opening, paper layer, book piece, bandage, or attachment.
+No traditional spots: no random blotch, circular spot, freckle field, leopard pattern, cow pattern, camouflage, or generic dinosaur-egg spotting.
+Composition/framing: exactly three complete eggs, left front, center side, right front three-quarter, same scale and baseline, generous margins, no overlap or crop.
+Text: no labels, words, letters, numbers, captions, or title.
+Constraints: change only center/right view rotation; no extra egg, pet, juvenile, face, crack, fragment, watermark, logo, trademark, or existing-IP symbol.
+
+IMAGE 2 — THREE-STATE HATCHING SEQUENCE
+
+Use case: identity-preserve
+Asset type: species-motif white dinosaur egg three-state hatching sequence
+Input images: Image 1 is the locked mother-egg and species-motif reference. Use the rightmost front three-quarter egg as the exact master and reproduce it three times at the same image-space angle, scale, baseline, silhouette, proportions, white semi-matte hard-shell texture, pore pattern, broad highlight, shadow, and motif projection. Do not rotate or redesign any copy.
+Primary request: Show exactly three identical-view copies of the same complete white egg arranged left to right as dormant, echo accumulating, and near hatching. All geometry and every motif's position, shape, size, orientation, flatness, and non-emissive color remain exactly identical. Change only the emission brightness and small surface-hugging soft glow of the existing lime-green motif elements: the off-center elliptical echo-core ring, the separate check rune, and the two small lime ticks inside the diagonal warm field.
+Locked non-emissive motifs: the dark indigo inner crescent of the echo ring, the indigo broken dash arc, the three short indigo bars, the flat coral scalloped rosette, the narrow warm-paper diagonal painted field, and the white shell remain unchanged across all three states.
+State 1, left — dormant: lime elements remain readable as matte yellow-green #B8D94A at about 15% emission, with no visible halo beyond their painted edges.
+State 2, center — echo accumulating: same exact egg and motif projection. Lime elements rise to about 55% emission, with a restrained soft glow extending no more than a few pixels across the curved white shell. Indigo, coral, warm-paper, and white colors remain unchanged.
+State 3, right — near hatching: same exact egg and motif projection. Lime elements reach 100% emission and richer lime saturation, with a gentle unified aura tightly hugging only the existing green ring, check rune, and two ticks. The glow must not create new dots, lines, shapes, cracks, or openings and must not obscure eggshell pores.
+Universal system invariant: white rounded closed egg geometry, white hard-shell material, proportion, camera, lighting, and hatching-state rules are fixed for all species. This species' motif_palette, primary_motif, secondary_motif, and emissive_motif are the only variable design layer.
+Flatness: every motif remains flush printed/painted or extremely shallow emissive color on the hard shell. No relief, raised wax, bevel, extrusion, real seam, stitch thread, hole, opening, paper layer, rolled edge, bandage, book part, or attachment.
+No traditional spots: no random blotch, circular spot, freckle cloud, leopard pattern, cow pattern, camouflage, or generic dinosaur-egg speckling.
+No face: keep the large single ring and check rune spatially separated and asymmetrical; never add a second ring, paired eyes, mouth, nose, or facial arrangement.
+Style/medium: polished original 2D collectible-game concept art, believable clean white semi-matte eggshell, friendly restrained magical glow.
+Scene/backdrop: clean pale warm off-white background with one identical subtle grounding shadow under each egg; no nest, prop, UI, border, divider, or scenery.
+Composition/framing: wide landscape; exactly three complete eggs; same front three-quarter angle and scale; evenly spaced; generous margins; no overlap or crop.
+Text: no written words, labels, letters, numbers, captions, or title.
+Constraints: no extra egg design, pet, juvenile, face, crack, opening, shell fragment, debris, smoke, beam, explosion, watermark, logo, trademark, or existing-IP symbol.
+
+IMAGE 3 — ROTATION-LOCKED AXISYMMETRIC MULTI-VIEW REVISION
+
+Use case: precise-object-edit
+Asset type: rotation-locked front, strict side, and front-three-quarter concept sheet
+Input image: the current juvenile-motif white dinosaur egg multi-view sheet.
+Primary request: Preserve the left egg as the exact geometry master. Rebuild all three eggs as the same vertical axisymmetric surface-of-revolution white dinosaur egg, using one identical image-space outer contour, top point, bottom point, maximum width, baseline, scale, center height, and grounding-shadow footprint. Horizontal rotation must never change silhouette or occupancy. Show left front, center strict side/profile, and right front three-quarter. Use the same orthographic-camera equivalent, fixed distance, focal length, pitch, framing, and pale warm studio background for all three.
+Surface-rotation proof: keep one fixed surface motif map containing the lime echo-core ring, separate lime check rune, coral flat rosette, indigo broken dash arc, and warm diagonal painted field with indigo bars and lime ticks. Rotate only this surface map around the egg. In the strict side view, move the ring and rosette toward the visible contour, strongly foreshorten them, and partially hide them around the far side. In the front-three-quarter view, show intermediate longitude, compression, and occlusion. Do not copy the front texture unchanged.
+Locked material and identity: clean white or very pale warm-white semi-matte hard eggshell, fine pores, broad soft highlight, plump closed rounded dinosaur-egg form, juvenile-derived palette and motifs, generous white-shell dominance.
+Forbidden geometry changes: no view-dependent narrowing, widening, height change, tilt, center shift, baseline shift, perspective scaling, different top curvature, different bottom curvature, or different shadow size.
+Flatness and safety: motifs are flush printed/painted marks only; no relief, real seam, thread, hole, paper layer, bandage, attachment, traditional random spots, face, crack, opening, fragment, text, label, watermark, logo, trademark, or existing-IP symbol.
+Composition: exactly three complete uncropped eggs on one 1624 × 969 landscape sheet, evenly spaced, no overlap.
+
+IMAGE 4 — BLANK FIXED-SILHOUETTE EXTRACTION BASE
+
+Use case: precise-object-edit
+Asset type: clean white mother-egg geometry base for deterministic contour locking
+Input image: the rotation-locked candidate generated from Image 3.
+Primary request: Remove only every colored surface motif from all three eggs and reconstruct clean white semi-matte eggshell beneath it. Preserve the complete egg geometry, camera, silhouette, pore texture, highlight, grounding shadow, scale, centers, baseline, spacing, background, canvas size, and pixel occupancy. Do not change the contour or introduce any new mark.
+Constraints: exactly three complete closed white eggs; no colored motif, spot, stain, crack, opening, label, text, watermark, logo, pet, juvenile, prop, or scenery.
+
+FINAL EMISSION / COMPOSITING NOTE
+
+The saved rotation-locked deliverable uses the first clean blank egg cell from Image 4 as one full-resolution fixed geometry-and-shadow base copied into all three cells. View-specific motif layers from Image 3 are composited without scaling at longitudinal offsets `0 px`, `24 px`, and `56 px`; masks are component-filtered and subpixel-feathered to remove shell/background contamination. This deterministic step changes only motif pixels and guarantees identical outer contour and image-space occupancy.

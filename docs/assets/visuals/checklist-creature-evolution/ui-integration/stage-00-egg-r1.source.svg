@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="443" height="980" viewBox="0 0 443 980" role="img" aria-labelledby="title desc">
+  <title id="title">清单怪兽掌上回响站，初诺契茧回响积累二比三界面稿 R1</title>
+  <desc id="desc">443乘980移动端怪兽页修订稿。初诺契茧使用最终蛋资产的透明有效像素裁切并严格等比显示，短宽光晕稳定视觉重心；承诺进度、点亮条件、孵化轨迹、真实回响与无压力说明保持不变。</desc>
+  <defs>
+    <clipPath id="stageClip">
+      <rect x="20" y="116" width="403" height="340" rx="22"/>
+    </clipPath>
+    <filter id="stageShadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#171C26" flood-opacity="0.20"/>
+    </filter>
+    <style>
+      .zh { font-family: "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif; letter-spacing: 0; }
+      .num { font-family: "Microsoft YaHei", "Source Han Sans SC", sans-serif; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+      .ink { fill: #171C26; }
+      .stone { fill: #6B665D; }
+      .cream { fill: #FFF9ED; }
+      .lime { fill: #C9F266; }
+      .cyan { fill: #54D6C8; }
+      .line { stroke: #D6C8AC; stroke-width: 1; }
+      .round { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect width="443" height="980" fill="#F4EAD4"/>
+
+  <text x="20" y="17" class="zh ink" font-size="11" font-weight="700">9:41</text>
+  <g transform="translate(374 8)" fill="none" stroke="#171C26" stroke-width="1.6" class="round">
+    <path d="M0 7h2M5 5h2v2M10 3h2v4M15 1h2v6"/>
+    <path d="M24 6c2.4-2.8 6.6-2.8 9 0M26.6 8.7c1.1-1.2 2.9-1.2 4 0"/>
+    <rect x="38" y="1" width="22" height="10" rx="2"/>
+    <rect x="60.8" y="4" width="2" height="4" rx="1" fill="#171C26" stroke="none"/>
+    <rect x="40.5" y="3.5" width="15" height="5" rx="1" fill="#171C26" stroke="none"/>
+  </g>
+
+  <text x="20" y="40" class="zh stone" font-size="13" font-weight="600">怪兽 / 契响卷灵</text>
+  <rect x="345" y="31" width="7" height="7" rx="1" fill="#C9F266"/>
+  <text x="360" y="40" class="zh stone" font-size="13" font-weight="600">孵化准备中</text>
+  <text x="20" y="75" class="zh ink" font-size="28" font-weight="800">初诺契茧</text>
+  <text x="20" y="101" class="zh stone" font-size="14" font-weight="400">怪兽蛋 · 契响卷灵的第一份承诺</text>
+
+  <g filter="url(#stageShadow)">
+    <rect x="20" y="116" width="403" height="340" rx="22" fill="#171C26"/>
+    <rect x="20.5" y="116.5" width="402" height="339" rx="21.5" fill="none" stroke="#2B303B"/>
+  </g>
+  <g clip-path="url(#stageClip)" opacity="0.18" fill="#54D6C8">
+    <rect x="43" y="184" width="4" height="4"/>
+    <rect x="55" y="168" width="3" height="3"/>
+    <rect x="386" y="208" width="4" height="4"/>
+    <rect x="397" y="190" width="3" height="3"/>
+    <rect x="68" y="338" width="3" height="3"/>
+    <rect x="374" y="352" width="4" height="4"/>
+  </g>
+  <text x="38" y="145" class="zh cream" font-size="15" font-weight="700">回响积累</text>
+  <g transform="translate(333 130)">
+    <rect x="0" y="0" width="12" height="12" rx="2" fill="#C9F266"/>
+    <path d="M3 6.2 5.2 8.4 9.2 3.9" fill="none" stroke="#171C26" stroke-width="1.7" class="round"/>
+    <rect x="17" y="0" width="12" height="12" rx="2" fill="#C9F266"/>
+    <path d="M20 6.2 22.2 8.4 26.2 3.9" fill="none" stroke="#171C26" stroke-width="1.7" class="round"/>
+    <rect x="34" y="0" width="12" height="12" rx="2" fill="none" stroke="#FFF9ED" stroke-width="1.5"/>
+    <text x="54" y="11" class="num cream" font-size="13" font-weight="700">2 / 3</text>
+  </g>
+
+  <ellipse cx="221.5" cy="270" rx="109" ry="76" fill="#FEFAEC"/>
+  <ellipse cx="221.5" cy="365" rx="78" ry="12" fill="#54D6C8" fill-opacity="0.14"/>
+  <path d="M147 368h149" fill="none" stroke="#54D6C8" stroke-opacity="0.34" stroke-width="1.5" class="round"/>
+  <image href="role-crops/role-stage-00-egg.png" x="159.5" y="178" width="124" height="186" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>
+
+  <text x="221.5" y="404" text-anchor="middle" class="zh cream" font-size="14" font-weight="600">第二枚勾印已点亮</text>
+  <g transform="translate(154 416)">
+    <rect x="0" y="0" width="20" height="20" rx="3" fill="#C9F266"/>
+    <path d="M5 10.2 8.6 13.8 15.2 6.5" fill="none" stroke="#171C26" stroke-width="2.2" class="round"/>
+    <rect x="28" y="0" width="20" height="20" rx="3" fill="#C9F266"/>
+    <path d="M33 10.2 36.6 13.8 43.2 6.5" fill="none" stroke="#171C26" stroke-width="2.2" class="round"/>
+    <rect x="56" y="0" width="20" height="20" rx="3" fill="none" stroke="#FFF9ED" stroke-width="1.8"/>
+    <text x="92" y="15" class="num cream" font-size="16" font-weight="800">2 / 3</text>
+  </g>
+
+  <line x1="20" y1="472" x2="423" y2="472" class="line"/>
+  <rect x="20" y="488" width="36" height="36" rx="7" fill="#171C26"/>
+  <path d="M31 506h14M38 499v14" fill="none" stroke="#C9F266" stroke-width="2" class="round"/>
+  <text x="70" y="499" class="zh stone" font-size="13" font-weight="700">下一次点亮</text>
+  <text x="70" y="523" class="zh ink" font-size="16" font-weight="700">完成任意 1 项清晰可执行的小约定</text>
+  <line x1="20" y1="540" x2="423" y2="540" class="line"/>
+
+  <text x="20" y="570" class="zh ink" font-size="16" font-weight="800">孵化轨迹</text>
+  <text x="423" y="570" text-anchor="end" class="zh stone" font-size="13" font-weight="600">当前：回响积累</text>
+  <line x1="51" y1="602" x2="392" y2="602" stroke="#BFB49D" stroke-width="2"/>
+  <line x1="51" y1="602" x2="221" y2="602" stroke="#C9F266" stroke-width="3"/>
+  <rect x="44" y="595" width="14" height="14" rx="3" fill="#F4EAD4" stroke="#6B665D" stroke-width="1.6"/>
+  <rect x="213" y="594" width="16" height="16" rx="3" fill="#C9F266" stroke="#171C26" stroke-width="1.5"/>
+  <path d="M217 602 220 605 225 599" fill="none" stroke="#171C26" stroke-width="1.8" class="round"/>
+  <rect x="385" y="595" width="14" height="14" rx="3" fill="#F4EAD4" stroke="#6B665D" stroke-width="1.6"/>
+  <text x="51" y="630" text-anchor="middle" class="zh stone" font-size="13" font-weight="600">未唤醒</text>
+  <text x="221" y="630" text-anchor="middle" class="zh ink" font-size="13" font-weight="800">回响积累</text>
+  <text x="392" y="630" text-anchor="middle" class="zh stone" font-size="13" font-weight="600">临近孵化</text>
+
+  <text x="20" y="666" class="zh ink" font-size="16" font-weight="800">最近回响</text>
+  <text x="423" y="666" text-anchor="end" class="zh stone" font-size="13" font-weight="600">只记真实完成</text>
+
+  <rect x="20" y="685" width="24" height="24" rx="5" fill="#C9F266"/>
+  <path d="M26 697 30.5 701.5 38 692.5" fill="none" stroke="#171C26" stroke-width="2.2" class="round"/>
+  <text x="56" y="701" class="zh ink" font-size="16" font-weight="700">整理明天的资料</text>
+  <text x="56" y="724" class="zh stone" font-size="13">今天 08:40 · 真实任务完成</text>
+  <line x1="20" y1="738" x2="423" y2="738" class="line"/>
+
+  <rect x="20" y="752" width="24" height="24" rx="5" fill="#54D6C8"/>
+  <path d="M26 764 30.5 768.5 38 759.5" fill="none" stroke="#171C26" stroke-width="2.2" class="round"/>
+  <text x="56" y="768" class="zh ink" font-size="16" font-weight="700">回复项目确认邮件</text>
+  <text x="56" y="791" class="zh stone" font-size="13">昨天 18:15 · 真实任务完成</text>
+  <line x1="20" y1="806" x2="423" y2="806" class="line"/>
+
+  <rect x="0" y="820" width="443" height="76" fill="#FFF9ED"/>
+  <rect x="20" y="840" width="28" height="28" rx="6" fill="#171C26"/>
+  <path d="M29 847v14M39 847v14" stroke="#54D6C8" stroke-width="2.4" class="round"/>
+  <text x="62" y="847" class="zh ink" font-size="14" font-weight="800">可以慢一点</text>
+  <text x="62" y="871" class="zh stone" font-size="14">不用连续完成；停一下不会熄灭已点亮的勾印。</text>
+
+  <rect x="0" y="908" width="443" height="72" fill="#FFF9ED"/>
+  <line x1="0" y1="908.5" x2="443" y2="908.5" class="line"/>
+
+  <g transform="translate(56 922)" fill="none" stroke="#6B665D" stroke-width="1.8" class="round">
+    <rect x="-8" y="0" width="16" height="18" rx="2"/>
+    <path d="M-3 -3v5M3-3v5M-4 8l3 3 5-5"/>
+  </g>
+  <text x="56" y="960" text-anchor="middle" class="zh stone" font-size="13" font-weight="600">今天</text>
+
+  <g transform="translate(166 922)" fill="none" stroke="#6B665D" stroke-width="1.8" class="round">
+    <rect x="-9" y="0" width="18" height="18" rx="2"/>
+    <path d="M-4 -3v5M4-3v5M-5 7h10M-5 11h7"/>
+  </g>
+  <text x="166" y="960" text-anchor="middle" class="zh stone" font-size="13" font-weight="600">长期</text>
+
+  <rect x="222" y="916" width="109" height="52" rx="26" fill="#E8F4D4"/>
+  <g transform="translate(277 926)">
+    <rect x="-7" y="0" width="14" height="14" rx="3" fill="#171C26"/>
+    <rect x="-3" y="4" width="6" height="6" rx="1" fill="#C9F266"/>
+    <path d="M-7 4-13 1v8l6 2M7 4l13-3v8l-13 2" fill="#FF715B" stroke="none"/>
+  </g>
+  <text x="277" y="960" text-anchor="middle" class="zh ink" font-size="13" font-weight="800">怪兽</text>
+  <rect x="250" y="975" width="54" height="3" rx="1.5" fill="#C9F266"/>
+
+  <g transform="translate(387 921)" fill="none" stroke="#6B665D" stroke-width="1.8" class="round">
+    <circle cx="0" cy="4" r="4"/>
+    <path d="M-8 18c1-5 4-7 8-7s7 2 8 7"/>
+  </g>
+  <text x="387" y="960" text-anchor="middle" class="zh stone" font-size="13" font-weight="600">我的</text>
+</svg>

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T-DIGIPET-007B",
+  "date": "2026-08-05",
+  "screen": "stage-overview",
+  "assetType": "five-stage design comparison board",
+  "status": "ready_for_qa",
+  "roles": [
+    {
+      "id": "stage-00",
+      "name": "初诺契茧",
+      "file": "role-crops/role-stage-00-egg.png",
+      "sha256": "974c29b0938ae38f2003cdc7b9cd64cd056717843ec8e8cbf22393ac64c25f56",
+      "sourceFile": "../pixel-art/eggs/egg-glow-states-pixel-v3.png",
+      "sourceSha256": "5b89d986a6a0c29ab3949a1c06cd9e49eba08312d104e54aa4d57c0e74b24a4f",
+      "cropBox": [590, 70, 1138, 870]
+    },
+    {
+      "id": "stage-01",
+      "name": "诺卷仔",
+      "file": "role-crops/role-stage-01-juvenile.png",
+      "sha256": "286f51af1e9473e1874c8a13fe6dd85fdd0c22513130d936a85ec94eaf02ef6c",
+      "sourceSha256": "d4b38d877a3674d38339578cd5777a44bc70ed675c17de23dd22b91b33f95361",
+      "cropBox": [19, 320, 305, 700]
+    },
+    {
+      "id": "stage-02",
+      "name": "联页契灵",
+      "file": "role-crops/role-stage-02-growth.png",
+      "sha256": "dd1c7f888278cb3ffd48a98870b72be595196a6b96af051c65a3dce7c29f2b79",
+      "sourceSha256": "d4b38d877a3674d38339578cd5777a44bc70ed675c17de23dd22b91b33f95361",
+      "cropBox": [405, 210, 930, 740]
+    },
+    {
+      "id": "stage-03",
+      "name": "履契拳师",
+      "file": "role-crops/role-stage-03-fighter.png",
+      "sha256": "be333d49209c389fa9c987c1c5728cb7a42d1d1615f588a9a69e0b215c2db2d7",
+      "sourceSha256": "d4b38d877a3674d38339578cd5777a44bc70ed675c17de23dd22b91b33f95361",
+      "cropBox": [1039, 39, 1644, 422]
+    },
+    {
+      "id": "stage-04",
+      "name": "万策卷贤",
+      "file": "role-crops/role-stage-04-scholar.png",
+      "sha256": "ac10aefa4d6501309f2b801ce1909608d092b72a7d538fd7c791a5b02438584a",
+      "sourceSha256": "d4b38d877a3674d38339578cd5777a44bc70ed675c17de23dd22b91b33f95361",
+      "cropBox": [1030, 430, 1650, 890]
+    }
+  ],
+  "generator": {
+    "mode": "authored SVG plus deterministic browser render",
+    "sourceFile": "stage-overview.source.svg",
+    "renderer": "Microsoft Edge 151 headless",
+    "generativeImageUsed": false
+  },
+  "output": {
+    "file": "stage-overview.png",
+    "width": 1600,
+    "height": 900,
+    "bytes": 258456,
+    "sha256": "c8a297150f5c0624f29112e2b72ce96880a4fe9040ee51e21942dd0fcaa8f261"
+  },
+  "responsiveAudit": {
+    "width375": "requires_vertical_comparison_sequence",
+    "largeText200": "requires_natural_height_and_textual_branch_labels",
+    "risk": "medium",
+    "productionSurface": false
+  },
+  "review": {
+    "branchWeightEqual": true,
+    "oldXiaodanUsed": false,
+    "bodyContrastMinimum": "4.5:1",
+    "qaEvidence": false
+  }
+}

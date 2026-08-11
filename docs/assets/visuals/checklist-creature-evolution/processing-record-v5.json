@@ -1,0 +1,60 @@
+{
+  "task_id": "T-DIGIPET-004-R4",
+  "operation": "strict_local_pixel_composite",
+  "base_image": {
+    "path": "C:\\Users\\Administrator\\Documents\\清单怪兽app\\docs\\assets\\visuals\\checklist-creature-evolution\\checklist-creature-evolution-concept-v3.png",
+    "sha256": "3A222A65DE99320F46F70D3AD6CBA4E3E7BBA64730644A9F6911212DEC2F4676",
+    "width_px": 1693,
+    "height_px": 929
+  },
+  "head_source": {
+    "path": "C:\\Users\\Administrator\\Documents\\清单怪兽app\\docs\\assets\\visuals\\checklist-creature-evolution\\checklist-creature-evolution-concept-v4.png",
+    "sha256": "88097F1CF53C2FC563B2F3190AB9FE26474A06383F8557FDAF75AC95D2DB2CFB",
+    "width_px": 1692,
+    "height_px": 929
+  },
+  "composite_mask": {
+    "shape": "ellipse",
+    "center_x": 1205,
+    "center_y": 600,
+    "radius_x": 105,
+    "radius_y": 84,
+    "inner_full_opacity_ratio": 0.82,
+    "edge_blend": "smoothstep feather from ratio 0.82 to 1.0"
+  },
+  "output_image": {
+    "path": "C:\\Users\\Administrator\\Documents\\清单怪兽app\\docs\\assets\\visuals\\checklist-creature-evolution\\checklist-creature-evolution-concept-v5.png",
+    "sha256": "5EAE86DF15218B10976C69C04BBD86A686D646035CBB125A637B225ADC001CC8",
+    "width_px": 1693,
+    "height_px": 929,
+    "file_size_bytes": 3030950
+  },
+  "pixel_audit": {
+    "comparison": "V3 ARGB pixels versus V5 ARGB pixels",
+    "different_pixel_count": 26855,
+    "difference_bbox_inclusive": {
+      "min_x": 1101,
+      "min_y": 517,
+      "max_x": 1308,
+      "max_y": 683
+    },
+    "allowed_rect_inclusive": {
+      "min_x": 1100,
+      "min_y": 516,
+      "max_x": 1310,
+      "max_y": 684
+    },
+    "different_pixels_outside_allowed_rect": 0,
+    "different_pixels_outside_allowed_ellipse": 0,
+    "max_rgb_channel_sum_delta": 715,
+    "outside_region_pixel_identity": true
+  },
+  "visual_seam_review": {
+    "hard_cut_edge": false,
+    "double_image_or_ghosting": false,
+    "scale_or_position_mismatch": false,
+    "broken_page_crown": false,
+    "abnormal_color_band": false,
+    "passed": true
+  }
+}

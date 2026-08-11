@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T-DIGIPET-001",
+  "date": "2026-07-29",
+  "useCase": "ui-mockup",
+  "assetType": "mobile product UI visual decision draft",
+  "screen": "today-mainstage",
+  "designDirection": "掌上回响站",
+  "decisionUse": "验证宠物主场能否在前5秒成立，同时保留快速创建与任务完成效率",
+  "status": "draft",
+  "recommended": true,
+  "generator": {
+    "mode": "built-in image_gen",
+    "referenceImages": []
+  },
+  "output": {
+    "file": "2026-07-29-design-today-mainstage-draft.png",
+    "width": 853,
+    "height": 1844,
+    "format": "png"
+  },
+  "review": {
+    "directionGate": "pass",
+    "qaEvidence": false,
+    "knownLimitations": [
+      "图中“能量”仅为视觉叙事提案，实施时不得新增第二套账本，须映射现有XP",
+      "图像生成的中文与图标只作观感参考，最终实现以DESIGN.md与真实组件为准",
+      "仍待用户确认整体气质、角色轮廓和深色栖息舱占比"
+    ]
+  }
+}
+

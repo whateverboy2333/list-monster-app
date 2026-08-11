@@ -1,0 +1,66 @@
+{
+  "task_id": "T-DIGIPET-006-R1",
+  "production_date": "2026-07-30",
+  "production_mode": "built-in image_gen generation with targeted identity-preserve revision",
+  "template": {
+    "geometry_id": "EGG_STD_01",
+    "material_id": "SHELL_SEMIMATTE_01",
+    "pattern_id": "SPOTMAP_STD_01",
+    "geometry_policy": "shared unchanged by every pet species",
+    "pattern_policy": "five primary patches, four secondary patches, and sixteen glow speckles fixed for every species",
+    "species_variation_policy": "color values only"
+  },
+  "contract_echo_color_slots": {
+    "base": "#E8D8B7",
+    "primary_spot": "#283C58",
+    "secondary_spot": "#CF6B55",
+    "hatch_glow": "#B8D94A"
+  },
+  "hatching_state_glow_intensity": {
+    "dormant": 0.15,
+    "echo_accumulating": 0.55,
+    "near_hatching": 1.0
+  },
+  "outputs": [
+    {
+      "asset_name": "universal-dinosaur-egg-standard-multiview.png",
+      "purpose": "front, side, and front three-quarter proof of the universal egg template",
+      "width_px": 1624,
+      "height_px": 969,
+      "pixel_format": "24-bit RGB",
+      "bytes": 1687231,
+      "sha256": "A57D47FD8809FB0E0D2B7F4B4C6873333C3D3D2020D8A8BBF5D666BA64D1BE99"
+    },
+    {
+      "asset_name": "contract-echo-colorway-hatching-states.png",
+      "purpose": "same-view dormant, echo-accumulating, and near-hatching colorway sequence",
+      "width_px": 1624,
+      "height_px": 969,
+      "pixel_format": "24-bit RGB",
+      "bytes": 1845037,
+      "sha256": "C7F45BECDF5C9EE1A37E4A205BEDD4637ED6BC42D873A58768E9B7DBBB96D0B5"
+    }
+  ],
+  "documentation": {
+    "design_spec": "design-spec.md",
+    "final_prompts": "final-prompts.txt"
+  },
+  "verification": {
+    "multiview_output_visually_inspected_after_save": true,
+    "hatching_states_output_visually_inspected_after_save": true,
+    "reads_as_rounded_classic_dinosaur_egg_at_first_glance": true,
+    "smooth_closed_top_and_bottom": true,
+    "no_crown_base_seam_opening_or_protrusion": true,
+    "same_geometry_across_views": true,
+    "fixed_organic_patch_and_speckle_template": true,
+    "semi_matte_hard_eggshell_material": true,
+    "contract_echo_identity_uses_color_slots_only": true,
+    "same_view_and_pattern_projection_across_hatching_states": true,
+    "hatching_states_change_glow_intensity_only": true,
+    "recolor_only_reuse_for_other_species_is_viable": true,
+    "no_species_specific_geometry_or_symbols": true,
+    "all_eggs_uncropped_and_unbroken": true,
+    "no_text_watermark_logo_pet_hatchling_or_existing_ip": true,
+    "previous_pet_egg_version_preserved": true
+  }
+}
