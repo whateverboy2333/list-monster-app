@@ -15,10 +15,11 @@ Craft 可编辑设计工作区；先把两处活跃工作落入可恢复版本�
 | frontend_dev | Lovelace / FE-PC-Design | 待命 | 2 |
 | documentation | DOC-Alpha | 待命 | 6 |
 | repository_ops | Repo-Alpha | 已轮换：权限上下文无法接收用户授权 | 0 |
-| repository_ops | Repo-Beta | 在岗（T-CRAFT-SAFETY-001） | 3 |
+| repository_ops | Repo-Beta | 在岗（Craft 快照收口） | 4 |
 | qa_inspector | QA-REPO-SAFETY-001 | 已裁撤 | 0 |
 | qa_inspector | QA-REPO-SAFETY-001-R2 | 已裁撤 | 1 |
 | qa_inspector | QA-REPO-SAFETY-001-CLOSE | 已裁撤 | 1 |
+| qa_inspector | QA-CRAFT-SAFETY-001 | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-CONTENT-005 | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-CONTENT-005-CLOSE | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-001 | 已裁撤 | 1 |
@@ -96,7 +97,9 @@ Craft 可编辑设计工作区；先把两处活跃工作落入可恢复版本�
 | T-REPO-QA-SAFETY-001-R2 | 复验五提交记录、非自指锚点与远端一致性 | QA-REPO-SAFETY-001-R2 | 已通过 | T-REPO-SAFETY-001-R2 |
 | T-REPO-SAFETY-001-CLOSE | 按 QA 通过裁决收口主仓安全任务记录 | Repo-Beta | 已完成：da65ee3 已推送 | T-REPO-QA-SAFETY-001-R2 |
 | T-REPO-QA-SAFETY-001-CLOSE | 只读复核主仓任务完成态与远端收口 | QA-REPO-SAFETY-001-CLOSE | 已通过 | T-REPO-SAFETY-001-CLOSE |
-| T-CRAFT-SAFETY-001 | 为 Craft 工作区建立本地版本快照 | Repo-Beta | 已派单 | T-REPO-SAFETY-001 |
+| T-CRAFT-SAFETY-001 | 为 Craft 工作区建立本地版本快照 | Repo-Beta | QA 已通过，正在完成态收口 | T-REPO-SAFETY-001 |
+| T-CRAFT-QA-SAFETY-001 | 独立验收 Craft 本地快照与主仓索引 | QA-CRAFT-SAFETY-001 | 已通过 | T-CRAFT-SAFETY-001 |
+| T-CRAFT-SAFETY-001-CLOSE | 按 QA 通过裁决收口 Craft 快照记录 | Repo-Beta | 已派单 | T-CRAFT-QA-SAFETY-001 |
 | T-REPO-ARCHIVE-001 | 迁移唯一有效事实后隔离旧恢复副本 | 待派单 | 用户已确认，等待主仓与 Craft 快照通过 | T-REPO-SAFETY-001-R1、T-CRAFT-SAFETY-001 |
 | T-DOC-CONTENT-005 | 整理当前项目内容地图与旧副本差异结论 | DOC-Alpha | 已完成 | T-REPO-IDENTITY-001 |
 | T-DOC-QA-CONTENT-005 | 独立质检内容地图与旧副本差异结论 | QA-DOC-CONTENT-005 | 已通过 | T-DOC-CONTENT-005 |
@@ -514,6 +517,67 @@ QA 裁决为 pass、无范围违规。状态页与 registry 均为 `completed`�
 禁止事项：不得修改 Craft 源码、存档、素材、证据或配置内容；不得给 Craft 添加 remote 或推送；不得删除缓存；不得重写主仓历史；不得操作旧恢复副本。
 
 依赖：T-REPO-SAFETY-001 完成态 QA 通过。
+
+### T-CRAFT-SAFETY-001 实施结果
+
+Repo-Beta 报告五项验证全部退出码 0；Craft 已初始化为本地 `master`，无 remote，基线提交为 `c7cf805`，包含 262 个文件、10,123,005 字节，工作树干净。主仓任务记录与 registry 已通过提交 `339eeba` 推送，主仓 HEAD 与 `origin/master` 跟踪引用一致，任务状态为 `ready_for_qa`。
+
+### T-CRAFT-QA-SAFETY-001
+
+任务ID：T-CRAFT-QA-SAFETY-001
+
+目标：只读独立验收 Craft 本地 Git 快照是否完整、安全、可恢复，以及主仓索引是否足以让后续 Agent 定位该快照。
+
+背景：Craft 基线提交报告为 `c7cf805`、262 文件、10,123,005 字节，无 remote；五项验证通过。主仓登记提交为 `339eeba`。PM 派发 QA 会产生一处新的主仓 `PROJECT_BOARD.md` 差异。
+
+验收标准：
+1. Craft 当前分支为 `master`，HEAD 为 `c7cf805` 的完整哈希，提交信息符合任务格式，工作树和索引干净，`git remote -v` 无输出。
+2. 基线提交包含 `.craft-saves/current-workspace.json`、`.do-dev/**`、源码、素材、脚本、文档、QA 输出、配置/锁文件和根截图；文件数与体积可复核为 262 个、约 10,123,005 字节。
+3. 提交不含 `node_modules/**`、`dist/**`、`.playwright-cli/**`、日志或编辑器缓存；这些目录若存在磁盘上仍被保留，`.gitignore` 规则有效。
+4. `.craft-saves/current-workspace.json` 可解析，内容仍为 `savedAt=2026-08-10T02:02:43.276Z`、活动工作区“清单怪兽V2.0”/`builtin-list-monster-echo`、当前画板 `lme-page-today`；没有默认模板覆盖或存档丢失迹象。
+5. 复核任务记录中的五项命令均有退出码 0/通过证据，并可只读核对构建产物被 ignore；不要求 QA 重跑会写文件的验证。
+6. 主仓 `.features/T-CRAFT-SAFETY-001/status.md` 与 registry 均为 `ready_for_qa`，记录 Craft 绝对路径、完整提交哈希、无 remote、验证、排除项、风险和下一接手点。
+7. 主仓提交 `339eeba` 的文件范围仅含授权的任务记录、registry 和 PM 看板；当前主仓 HEAD 与 `origin/master` 跟踪引用一致。除 PM 新派单的看板差异外，两仓无额外变化。
+8. 输出结构化 JSON：`task_id`、`verdict`、逐项 `criteria`、`blocking_issues`、`scope_check`、`snapshot_recovery_check`、`summary`。
+
+允许修改的文件范围：无；两仓全程只读。
+
+任务记录：QA 不创建或修改记录；裁决由 PM 写入 `PROJECT_BOARD.md`。
+
+禁止事项：不得编辑、暂存、提交、推送、添加 remote、清理缓存、修复引用或操作旧恢复副本。
+
+依赖：T-CRAFT-SAFETY-001。
+
+### T-CRAFT-QA-SAFETY-001 裁决
+
+QA 裁决为 pass、无范围违规。Craft 分支与 HEAD、262 文件/10,123,005 字节、显式存档字段及 blob、禁入项、ignore、无 remote、五项验证和 `git fsck` 均通过；主仓索引提交范围与远端跟踪引用一致。允许进入完成态收口。
+
+### T-CRAFT-SAFETY-001-CLOSE
+
+任务ID：T-CRAFT-SAFETY-001-CLOSE
+
+目标：依据 QA 通过裁决，把 Craft 快照任务记录与注册表正式收口为 `completed` 并推送主仓完成态。
+
+背景：T-CRAFT-QA-SAFETY-001 已 8/8 通过；Craft 基线提交 `c7cf805d03e80361f791ab1a60c43827a5105404` 已通过完整性验证，无 remote。当前仅 PM 看板有裁决与收口派单差异。
+
+验收标准：
+1. 主仓 `.features/T-CRAFT-SAFETY-001/status.md` 正文改为 `completed`，保留全部快照、验证、排除项与风险证据。
+2. 下一接手点明确 Craft 快照无剩余工作；下一任务为 `T-REPO-ARCHIVE-001`，开始隔离前须再次只读确认主仓与 Craft 快照健康。
+3. `.features/_registry.md` 对应条目同步为 `completed`，不修改协议正文或其他任务条目。
+4. 只修改上述两份记录；`PROJECT_BOARD.md` 仅按 PM 当前内容暂存，不改写；不得操作 Craft 仓库内容或历史。
+5. 创建 `[T-CRAFT-SAFETY-001] 收口 Craft 快照任务` 提交并正常推送主仓 `master`，核对主仓 HEAD 与 `origin/master` 跟踪引用一致、工作树干净。
+
+允许修改的文件范围：
+- 主仓 `.features/T-CRAFT-SAFETY-001/status.md`
+- 主仓 `.features/_registry.md`
+- 主仓 Git 索引与提交对象
+- 允许暂存但禁止改写：主仓 `PROJECT_BOARD.md`
+
+任务记录：`.features/T-CRAFT-SAFETY-001/status.md`
+
+禁止事项：不得修改其他文件；不得修改 Craft 仓库；不得重写历史、force push 或操作旧恢复副本。
+
+依赖：T-CRAFT-QA-SAFETY-001 pass。
 
 ### T-DOC-HANDOFF-001
 

@@ -17,7 +17,7 @@ owner: Repo-Beta
 
 ## 当前状态
 
-`ready_for_qa`
+`completed`
 
 ## 变更文件
 
@@ -82,7 +82,7 @@ owner: Repo-Beta
 
 ## 下一接手点
 
-由新鲜 QA Inspector 只读复核 Craft 存档身份、提交 `c7cf805d03e80361f791ab1a60c43827a5105404`、262 文件/10,123,005 字节、五项验证、禁入项、无 remote 与双仓干净状态。QA 通过前禁止隔离旧恢复副本，禁止给 Craft 添加 remote 或改写初始提交。
+Craft 快照任务已通过 8/8 QA 并正式收口，无剩余实施或质检工作。下一任务为 `T-REPO-ARCHIVE-001`；隔离旧恢复副本前必须先复核主仓 `master` 与 Craft 基线提交 `c7cf805d03e80361f791ab1a60c43827a5105404` 均健康、工作树干净且恢复锚点可读。后续仍禁止给 Craft 添加 remote 或改写初始提交。
 
 ## 维护信息
 
@@ -94,3 +94,4 @@ owner: Repo-Beta
 - 2026-08-11：读取 Craft `AGENTS.md` 与当前存档，确认活动工作区和当前画板身份；五项验证全部通过。
 - 2026-08-11：在 `craft-demo` 初始化本地 `master` 仓库，提交 262 个文件的 9.65 MiB 基线快照；未配置 remote，存档内容未改写。
 - 2026-08-11：将 Craft 恢复锚点、验证证据、排除项与下一接手点登记回主项目，任务进入 `ready_for_qa`。
+- 2026-08-11：T-CRAFT-QA-SAFETY-001 完成 8/8 只读复核并通过；按 PM 收口指令将任务状态与 registry 同步为 `completed`，下一任务切换至 `T-REPO-ARCHIVE-001`。
