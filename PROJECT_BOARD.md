@@ -15,8 +15,9 @@ Craft 可编辑设计工作区；先把两处活跃工作落入可恢复版本�
 | frontend_dev | Lovelace / FE-PC-Design | 待命 | 2 |
 | documentation | DOC-Alpha | 待命 | 6 |
 | repository_ops | Repo-Alpha | 已轮换：权限上下文无法接收用户授权 | 0 |
-| repository_ops | Repo-Beta | 在岗（T-REPO-SAFETY-001-R2） | 1 |
+| repository_ops | Repo-Beta | 在岗（主仓任务收口） | 2 |
 | qa_inspector | QA-REPO-SAFETY-001 | 已裁撤 | 0 |
+| qa_inspector | QA-REPO-SAFETY-001-R2 | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-CONTENT-005 | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-CONTENT-005-CLOSE | 已裁撤 | 1 |
 | qa_inspector | QA-DOC-001 | 已裁撤 | 1 |
@@ -87,10 +88,12 @@ Craft 可编辑设计工作区；先把两处活跃工作落入可恢复版本�
 | 任务 ID | 任务 | 负责人 | 状态 | 依赖 |
 |---|---|---|---|---|
 | T-REPO-IDENTITY-001 | 裁决主项目、Craft 工作区与恢复副本身份 | PM | 已完成 | 无 |
-| T-REPO-SAFETY-001 | 将主项目未提交工作按价值分类并提交落盘 | Repo-Beta | QA 未通过：任务记录遗漏第 5 个提交，R2 返工中 | T-REPO-IDENTITY-001 |
+| T-REPO-SAFETY-001 | 将主项目未提交工作按价值分类并提交落盘 | Repo-Beta | QA R2 通过，正在完成态收口 | T-REPO-IDENTITY-001 |
 | T-REPO-SAFETY-001-R1 | 诊断 Flutter 测试启动超时并在门禁通过后继续主仓提交推送 | Repo-Beta | 已完成：5 个提交推送，HEAD/远端一致 | T-REPO-SAFETY-001 |
 | T-REPO-QA-SAFETY-001 | 独立验收主仓提交、排除项、测试证据与远端一致性 | QA-REPO-SAFETY-001 | 未通过：状态页仍记 4 个提交/1292f51 | T-REPO-SAFETY-001-R1 |
-| T-REPO-SAFETY-001-R2 | 校正任务记录中的第 5 个提交与最终远端哈希 | Repo-Beta | 已派单 | T-REPO-QA-SAFETY-001 |
+| T-REPO-SAFETY-001-R2 | 校正任务记录中的第 5 个提交与最终远端哈希 | Repo-Beta | 已完成 | T-REPO-QA-SAFETY-001 |
+| T-REPO-QA-SAFETY-001-R2 | 复验五提交记录、非自指锚点与远端一致性 | QA-REPO-SAFETY-001-R2 | 已通过 | T-REPO-SAFETY-001-R2 |
+| T-REPO-SAFETY-001-CLOSE | 按 QA 通过裁决收口主仓安全任务记录 | Repo-Beta | 已派单 | T-REPO-QA-SAFETY-001-R2 |
 | T-CRAFT-SAFETY-001 | 为 Craft 工作区建立本地版本快照 | 待派单 | 用户已确认，等待主仓安全任务通过 | T-REPO-SAFETY-001-R1 |
 | T-REPO-ARCHIVE-001 | 迁移唯一有效事实后隔离旧恢复副本 | 待派单 | 用户已确认，等待主仓与 Craft 快照通过 | T-REPO-SAFETY-001-R1、T-CRAFT-SAFETY-001 |
 | T-DOC-CONTENT-005 | 整理当前项目内容地图与旧副本差异结论 | DOC-Alpha | 已完成 | T-REPO-IDENTITY-001 |
@@ -389,6 +392,66 @@ QA 裁决为 fail，无范围违规。主仓提交内容、禁入项、ignore、
 禁止事项：不得修改其他文件；不得重写历史、amend、rebase、reset、clean、force push 或切换分支；不得操作 `craft-demo` 或恢复副本。
 
 依赖：T-REPO-QA-SAFETY-001 fail 裁决。
+
+### T-REPO-SAFETY-001-R2 实施结果
+
+Repo-Beta 已校正任务状态页中的五提交事实，并创建、推送 R2 记录提交 `82a7d39`；该提交父提交为 `db4f21e`。实施结束时本地 HEAD、`origin/master` 跟踪引用与远端一致，任务正文和 registry 为 `ready_for_qa`，工作树干净。因提交自身无法预写自身哈希，状态页采用“父提交 + 提交信息 + 由 `git log -1`/远端引用定位最终锚点”的非自指记录方式。
+
+### T-REPO-QA-SAFETY-001-R2
+
+任务ID：T-REPO-QA-SAFETY-001-R2
+
+目标：只读复验 QA 首轮指出的任务记录不一致是否闭环，并确认 R2 后主仓仍可恢复。
+
+背景：首轮 QA 唯一阻断是任务状态页遗漏第 5 个提交 `db4f21e`。Repo-Beta 已修订状态页并推送 R2 提交 `82a7d39`，采用非自指方式记录本次提交。PM 派发复验时会产生新的 `PROJECT_BOARD.md` 未提交差异，该差异不得归因于实现 Agent。
+
+验收标准：
+1. `.features/T-REPO-SAFETY-001/status.md` 不再含“仅 4 个提交/最终为 `1292f51`/只复核 4 个提交”的过时结论。
+2. 状态页完整列明原任务 5 个提交及用途，包含第 5 个 `db4f21e`，并保留测试、禁入项、凭据登录与 checkpoint 风险证据。
+3. R2 记录采用可复核的非自指方式：明确父提交 `db4f21e`、提交信息或批次，并指向 `git log -1`/远端引用定位最终提交；不得要求提交内容预写自身哈希。
+4. 独立确认当前 HEAD、`origin/master` 跟踪引用与 `git ls-remote origin refs/heads/master` 均为 R2 提交 `82a7d39` 的完整哈希；若 QA 凭据上下文无法执行 `ls-remote`，必须明确区分“无法独立联网复核”与“远端不一致”，并以现有推送证据、跟踪引用及提交祖先关系判断是否阻断。
+5. 除 PM 新增的 `PROJECT_BOARD.md` 派单差异外，工作树无其他变化；R2 提交只包含授权的任务记录文件及按现状暂存的 PM 看板，不含产品或禁入项。
+6. 状态页和 registry 均为 `ready_for_qa`，下一接手点明确。
+7. 输出结构化 JSON：`task_id`、`verdict`、逐项 `criteria`、`blocking_issues`、`scope_check`、`remote_recovery_check`、`summary`。
+
+允许修改的文件范围：无；全程只读。
+
+任务记录：QA 不创建或修改任务记录；裁决由 PM 写入 `PROJECT_BOARD.md`。
+
+禁止事项：不得编辑、暂存、提交、推送、清理、修复引用或操作其他仓库。
+
+依赖：T-REPO-SAFETY-001-R2。
+
+### T-REPO-QA-SAFETY-001-R2 裁决
+
+QA 裁决为 pass，无范围违规。状态页已完整列明 5 个实施提交及第 5 个 `db4f21e`，保留测试、禁入项、凭据与 checkpoint 风险证据；R2 通过父提交、提交信息和 Git 引用定位最终锚点，避免自指遗漏。R2 提交 `82a7d39d5edb1117d3ebb0c449e9e5a953c84f34` 与 `origin/master` 跟踪引用一致，reflog 有 push 证据；QA 进程仅因缺少 HTTPS 凭据无法实时 `ls-remote`，不构成远端不一致。允许进入完成态收口。
+
+### T-REPO-SAFETY-001-CLOSE
+
+任务ID：T-REPO-SAFETY-001-CLOSE
+
+目标：依据 R2 QA 通过裁决，将主仓安全任务记录和注册表正式收口为 `completed` 并推送完成态。
+
+背景：T-REPO-QA-SAFETY-001-R2 已 pass、无范围违规；当前唯一 PM 差异为本看板裁决与收口派单。主仓内容、记录和远端恢复链已通过验收。
+
+验收标准：
+1. `.features/T-REPO-SAFETY-001/status.md` 正文当前状态改为 `completed`，保留全部历史证据与风险，不覆盖或删除既有更新记录。
+2. 下一接手点明确：主仓安全任务无剩余实施工作；下一顺序任务为 `T-CRAFT-SAFETY-001`，旧副本隔离必须继续等待 Craft 快照通过。
+3. `.features/_registry.md` 同步为 `completed`，不改协议正文或其他任务条目。
+4. 只修改上述两份任务记录文件；`PROJECT_BOARD.md` 仅按 PM 当前内容暂存，不得改写。
+5. 创建符合 `[T-REPO-SAFETY-001] 收口主仓安全任务` 格式的提交并正常推送 `master`；核对本地 HEAD 与 `origin/master` 跟踪引用一致，工作树干净。
+
+允许修改的文件范围：
+- `.features/T-REPO-SAFETY-001/status.md`
+- `.features/_registry.md`
+- Git 索引与提交对象
+- 允许暂存但禁止改写：`PROJECT_BOARD.md`
+
+任务记录：`.features/T-REPO-SAFETY-001/status.md`
+
+禁止事项：不得修改其他文件；不得重写历史、amend、rebase、reset、clean、force push 或切换分支；不得操作 `craft-demo` 或恢复副本。
+
+依赖：T-REPO-QA-SAFETY-001-R2 pass 裁决。
 
 ### T-DOC-HANDOFF-001
 

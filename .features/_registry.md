@@ -63,6 +63,6 @@ Frontmatter 的 `status` 只表示文档生命周期；任务执行状态必须�
 | T-CRAFT-SAVE-001 | [status.md](T-CRAFT-SAVE-001/status.md) | FE-Gamma | `completed` | 2026-08-10 |
 | BF-0810-1 | [status.md](BF-0810-1/status.md) | FE-Gamma | `ready_for_qa`（R1 QA通过，待用户验收） | 2026-08-10 |
 | T-DOC-CONTENT-005 | [status.md](T-DOC-CONTENT-005/status.md) | DOC-Alpha | `completed` | 2026-08-11 |
-| T-REPO-SAFETY-001 | [status.md](T-REPO-SAFETY-001/status.md) | Repo-Beta | `ready_for_qa` | 2026-08-11 |
+| T-REPO-SAFETY-001 | [status.md](T-REPO-SAFETY-001/status.md) | Repo-Beta | `completed` | 2026-08-11 |
 
 可复制指令：把改动更新到 `.features/<任务ID>/status.md`，按 `AGENTS.md` 模板记录改动、验证、风险和下一接手点。
