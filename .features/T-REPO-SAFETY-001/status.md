@@ -3,7 +3,7 @@ status: live
 type: maintenance
 module: repository-safety
 last_updated: 2026-08-11
-owner: Repo-Alpha
+owner: Repo-Beta
 ---
 
 # T-REPO-SAFETY-001 任务交接
@@ -17,7 +17,7 @@ owner: Repo-Alpha
 
 ## 当前状态
 
-`blocked`
+`ready_for_qa`
 
 ## 变更文件
 
@@ -30,7 +30,7 @@ owner: Repo-Alpha
 
 - Git 将忽略 `.playwright-cli/`、`shot*-out.json`、`snap*-out.json` 与 `webbridge-req-*.json` 临时产物。
 - 既有日志、`build/` 与 `dist/` 忽略规则继续有效。
-- 产品、设计、证据与治理内容将由逻辑提交保全到 `origin/master`。
+- 产品、设计、证据与治理内容已由四个逻辑提交保全到 `origin/master`。
 
 ## 验证证据
 
@@ -79,21 +79,36 @@ owner: Repo-Alpha
 - PM 随后转达用户已明确批准提交并推送，但第二次权限申请仍被自动审查拒绝。确切原因是审查不接受代理转述，当前线程可见的可信用户消息中没有直接授权；提交仍位于默认分支 `master` 且包含约 1.3 MB generated preview 产物。
 - 第二次拒绝后再次停止，未创建提交、未推送、未取消暂存、未扩大命令范围；`HEAD` 与暂存清单保持不变。
 
+### R1 授权后提交与推送
+
+- 用户在根会话明确批准将已说明范围提交并推送到 `origin/master`；Repo-Beta 继承该可信授权后继续现有暂存现场。
+- 复用仓库最近提交者身份，仅写入本仓库本地 Git 配置；未修改全局身份配置。
+- 已创建四个逻辑提交：
+  1. `2316978a078dde50260b108bca0ea0da261df14b`：产品修复、定向测试、Windows 构建脚本与 Craft 静态预览。
+  2. `080ea9081b1d6982f6b0e38fed81db2caf3dfa23`：设计文档、PRD/PDF 与约 40.78 MB 视觉资产。
+  3. `47e42b5fee89a8f4dd49d3db356c6c3c8a7fa2dd`：Bug 验收记录、Playwright 截图与工作区证据。
+  4. `1292f51f28f705ee4cdc4e48180918b52888ab39`：协作配置、四层事实源、任务记录与忽略规则治理基线。
+- 每组提交前均执行当前工作树 `git diff --check`，结果通过；提交清单复核未包含 `.playwright-cli/**`、根目录诊断 JSON、日志、`build/**` 或 `dist/**`。
+- `git push origin master` 成功，远端更新范围为 `c20254a..1292f51`；本地 `HEAD`、本地跟踪引用 `origin/master` 与 `git ls-remote origin refs/heads/master` 均为 `1292f51f28f705ee4cdc4e48180918b52888ab39`。
+- 推送后工作树 `git status --short` 为空；被忽略的临时文件仍保留在磁盘。
+- 历史祖先检查确认 `590f0d1` 与 `424ddb4` 均包含在当前 `master` 中，未改写历史、未 force push、未切换分支。
+- 标准 `git fetch origin master` 受既有损坏的 `refs/codex/turn-diffs/checkpoints/**` 内部引用阻断；未删除或修复该范围外引用。改以 push 成功输出、本地跟踪引用和 `git ls-remote` 三方一致核对远端事实。
+
 ## 风险 / 未决事项
 
-- Flutter 测试门禁已明确通过；当前无测试阻塞。
-- 默认分支提交权限连续两次被自动审查拒绝，第二次明确要求本线程取得可信用户消息中的直接授权；任务维持 `blocked`。逻辑提交与远端推送尚未执行，`master` 停留在起始提交 `424ddb4`。
-- 产品/测试与项目工具组当前已暂存，等待人类用户明确批准默认分支提交；不得将该暂存状态误认为已提交。
+- Flutter 测试、提交与远端推送均已完成，无本任务实施阻塞。
+- 仓库存在一个任务开始前即有的损坏 Codex 内部检查点引用，导致 `git fetch` 与提交后的自动 geometric repack 报错；不影响提交、正常 push、HEAD 或远端 master 一致性，但后续应由 PM 单独建卡处理，禁止在本任务内擅自删除引用。
 - Android SDK 未配置，但本任务是 Windows Widget 定向测试，不影响已取得的通过结果。
+- 提交中按用户明确授权保全了生成版 Craft preview 和大体积设计素材；后续若需要历史瘦身，必须另行决策，禁止改写本次已推送历史。
 
 ## 下一接手点
 
-需让可信用户授权直接进入 Repo-Alpha 当前线程可见上下文，并明确批准在默认分支 `master` 上创建包含约 1.3 MB generated preview 产物的提交及推送；之后先复核当前暂存清单与排除项，再继续逻辑提交及正常推送。禁止绕过权限审查、切换分支、改写历史、删除临时文件或操作其他仓库。
+由新鲜 QA Inspector 只读复核四个提交、禁入项、测试证据、远端 master 一致性与干净工作树；同时把损坏的 Codex 内部检查点引用登记为独立治理风险，不在本任务内修复。QA 前禁止修改或改写本次提交历史，也不得操作 Craft 工作区或恢复副本。
 
 ## 维护信息
 
 - 最近更新时间：2026-08-11
-- 当前负责人：Repo-Alpha
+- 当前负责人：Repo-Beta
 
 ## 更新记录
 
@@ -102,3 +117,4 @@ owner: Repo-Alpha
 - 2026-08-11：R1 定位到沙箱对外置 SDK 缓存锁与 stamp 的写权限限制；在不安装、不升级、不修改系统配置的前提下，沙箱外使用同一绝对路径 SDK 完成 doctor 与定向测试，5 项测试全部通过，任务恢复为 `in_progress`。
 - 2026-08-11：产品/测试与项目工具组完成暂存及排除项核对；默认分支提交权限申请被自动审查拒绝，未创建提交或推送，任务转为 `blocked` 等待人类用户明确批准。
 - 2026-08-11：PM 转达用户明确授权后再次申请提交权限；自动审查仍因授权属于代理转述而拒绝。按要求立即停止，保留 10 个文件的原暂存状态，未提交或推送。
+- 2026-08-11：Repo-Beta 继承根会话中的用户直接授权，完成四个逻辑提交并正常推送至 `origin/master`；本地、跟踪引用与远端 master 哈希一致，工作树为空，任务转为 `ready_for_qa`。
