@@ -18,7 +18,7 @@ owner: Repo-Beta
 
 ## 当前状态
 
-`ready_for_qa`
+`completed`
 
 ## 变更文件
 
@@ -69,7 +69,7 @@ owner: Repo-Beta
 
 ## 下一接手点
 
-由新鲜 QA Inspector 只读复核源路径缺失、归档路径存在、HEAD/status/4039 文件/8 项 SHA-256 与清单一致，并确认主仓与 Craft 未受影响。若需恢复，只能在原路径不存在时，将归档目录用 `Move-Item -LiteralPath` 原样重命名回旧路径；QA 通过前禁止删除、压缩、提交或修改归档内容。
+主仓落盘、Craft 本地快照和旧副本隔离三项安全任务已全部通过 QA 并完成，无剩余实施或质检工作。后续 Agent 只使用 `C:/Users/Administrator/Documents/清单怪兽app` 与 `C:/Users/Administrator/Documents/craft-demo` 两个活跃路径，不得在归档目录继续开发、提交、清理或修改。若未来经用户明确批准恢复，仍须按 `archive-manifest.txt` 的可逆方法原样重命名回旧路径。
 
 ## 维护信息
 
@@ -81,3 +81,4 @@ owner: Repo-Beta
 - 2026-08-11：复核主仓与 Craft 恢复锚点健康，校验源/目标严格位于指定父目录内。
 - 2026-08-11：记录旧副本 HEAD、status、4039 文件与 8 项 SHA-256 后，使用精确 `Move-Item -LiteralPath` 完成同父目录可逆重命名。
 - 2026-08-11：移动后核对旧路径消失、归档存在，HEAD/status/文件数/哈希保持一致；主仓与 Craft 未变，任务进入 `ready_for_qa`。
+- 2026-08-11：T-REPO-QA-ARCHIVE-001 只读复核通过且无范围违规；按 PM 收口指令将任务状态与 registry 同步为 `completed`，三项仓库安全任务全部完成。
